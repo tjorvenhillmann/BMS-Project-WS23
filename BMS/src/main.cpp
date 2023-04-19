@@ -1,12 +1,17 @@
 #include <Arduino.h>
+#include <math.h>
 
 // ********************** global definitions **********************
 bool safe = false; 
 int SOC = 0; // values from 0 to 100
+
+// calibration data 
 int v_ref = 5000; // reference voltage in mV
+double temp_sens_offset = 12; // offset for temp_sensor [C]
 
 // fault indications 
 bool current_fault = false; 
+int temp_fault = 0; // 1: high temp; -1: low temp
 
 // measurement data 
 int temp_1 = 0; 
@@ -24,7 +29,7 @@ bool balance_status_1 = false;
 bool balance_status_2 = false;
 bool balance_status_3 = false; 
 bool balance_status_4 = false; 
-bool battery_switch = false; // battery disconnected 
+bool battery_switch = false;
 
 // safety limits (read-only)
 const int cutoff_temp_upper_limit = 60; // [°C]
@@ -61,6 +66,7 @@ const unsigned int BATTERY_SWITCH_PIN = 26;
 void checkCurrent_withACS712();
 void checkVoltage();
 void checkTemp();
+double readThermisterSE017();
 void setFaultCondition();
 void setSafeCondition();
 void calculateSOC();
@@ -90,6 +96,14 @@ void setup() {
   pinMode(BALANCE_STATUS_3_PIN, OUTPUT);
   pinMode(BALANCE_STATUS_4_PIN, OUTPUT);
   pinMode(BATTERY_SWITCH_PIN, OUTPUT); 
+}
+
+double readThermisterSE017(int RawADC){
+  double lnR, Temp; 
+  lnR = log(((10240000/RawADC) - 10000)); 
+  Temp = 1/(0.001129148 + (0.000234125 + (0.0000000876741 * lnR * lnR )) * lnR);
+  Temp = -1*(Temp - 273.15 - temp_sens_offset); 
+  return Temp; 
 }
 
 void checkCurrent_withACS712(){
@@ -141,7 +155,7 @@ void checkVoltage(){
  
   //check for every value
   int cell_V[] = {cell_1_V, cell_2_V, cell_3_V, cell_4_V}; 
-  for(i=0; i < sizeof(cell_V), i++){ 
+  for(i=0; i < sizeof(cell_V); i++){ 
     if(cell_V[i] >= cutoff_voltage_upper_limit){ //high voltage
       // DISCHARGE!!! --> Balancing Enable
     }else if(cell_V[i] <= cutoff_voltage_lower_limit){ //low voltage
@@ -151,6 +165,7 @@ void checkVoltage(){
 }
 
 void checkTemperature(){
+  int i = 0; 
   // 4 temperature sensors, each value 2 byte
   // read sensors
   int temp_1_sensValue = analogRead(TEMP_1_PIN); 
@@ -158,19 +173,40 @@ void checkTemperature(){
   int temp_3_sensValue = analogRead(TEMP_3_PIN);
   int temp_4_sensValue = analogRead(TEMP_4_PIN);
  
+ // calculate temperature with raw value 
+  temp_1 = readThermisterSE017(temp_1_sensValue); 
+  temp_2 = readThermisterSE017(temp_2_sensValue);
+  temp_3 = readThermisterSE017(temp_3_sensValue); 
+  temp_4 = readThermisterSE017(temp_4_sensValue);
 
   //check for every value
-  for(){ 
-    if(){ //no feedback
-
-    }else if(){ //high temperature
-
-    }else if(){ //low temperature
-
-    }else{
-      
+  int temp_C[] = {temp_1, temp_2, temp_3, temp_4}; 
+  for(i=0; i < sizeof(temp_C); i++){ 
+    //high temperature
+    if(temp_C[i] >= cutoff_temp_upper_limit){ 
+      // DISCONNECT !!! 
+      battery_switch = false; 
+      temp_fault = 1; 
+    }
+    //low temperature
+    if(temp_C[i] <= cutoff_temp_lower_limit){ 
+      // DISCONNECT !!!
+      battery_switch = false; 
+      temp_fault = -1; 
     }
   }
+
+  /*
+  // Display
+  Serial.print("temp 1 value = ");
+  Serial.print(temp_1);
+  Serial.print("\t temp 2 value = ");
+  Serial.print(temp_2);
+  Serial.print("\t temp 3 value = ");
+  Serial.print(temp_3);
+  Serial.print("\t temp 4 value = ");
+  Serial.print(temp_4);
+  */
 }
 
 void setFaultCondition(){
@@ -187,7 +223,7 @@ void calculateSOC(){
 
 
 void loop() {
-  checkCurrent();
+  checkCurrent_withACS712();
   checkVoltage();
   checkTemp();
 
