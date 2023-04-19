@@ -5,6 +5,9 @@ bool safe = false;
 int SOC = 0; // values from 0 to 100
 int v_ref = 5000; // reference voltage in mV
 
+// fault indications 
+bool current_fault = false; 
+
 // measurement data 
 int temp_1 = 0; 
 int temp_2 = 0; 
@@ -21,13 +24,15 @@ bool balance_status_1 = false;
 bool balance_status_2 = false;
 bool balance_status_3 = false; 
 bool balance_status_4 = false; 
+bool battery_switch = false; // battery disconnected 
 
 // safety limits (read-only)
 const int cutoff_temp_upper_limit = 60; // [°C]
 const int cutoff_temp_lower_limit = -20; // [°C]
 const int cutoff_voltage_lower_limit = 3200; // [mV]
 const int cutoff_voltage_upper_limit = 4200; // [mV]
-const int cutoff_current = 30000; // current maximum 30A [mA] 
+const int positive_cutoff_current = 30000; // current maximum 30A [mA] 
+const int negative_cutoff_current = -30000; // negative current maximum -30A [mA] 
 
 // pin definition (read-only)
 // analouge
@@ -44,10 +49,11 @@ const unsigned int CELL_4_V_PIN = A7;
 const unsigned int CURRENT_PIN = A8;
 
 // digital
-const unsigned int BALANCE_STATUS_1_PIN = 0; 
-const unsigned int BALANCE_STATUS_2_PIN = 1; 
-const unsigned int BALANCE_STATUS_3_PIN = 2; 
-const unsigned int BALANCE_STATUS_4_PIN = 3; 
+const unsigned int BALANCE_STATUS_1_PIN = 22; 
+const unsigned int BALANCE_STATUS_2_PIN = 23; 
+const unsigned int BALANCE_STATUS_3_PIN = 24; 
+const unsigned int BALANCE_STATUS_4_PIN = 25; 
+const unsigned int BATTERY_SWITCH_PIN = 26; 
 
 // **************************************************************
 
@@ -83,18 +89,44 @@ void setup() {
   pinMode(BALANCE_STATUS_2_PIN, OUTPUT);
   pinMode(BALANCE_STATUS_3_PIN, OUTPUT);
   pinMode(BALANCE_STATUS_4_PIN, OUTPUT);
-
+  pinMode(BATTERY_SWITCH_PIN, OUTPUT); 
 }
 
 void checkCurrent_withACS712(){
   // read sensor
-  int sensValue = analogRead(CURRENT_PIN); 
-  int sensVoltage = map(sensValue, 0, 1023, 0, v_ref);
-  current = ((sensVoltage - 2500)/66); // 2500 = offset value; sensor measures 66 mV/A 
+  int offset = 2500; // [mV], 0A at 2.5V
+  int sensValue = analogRead(CURRENT_PIN); // read sensor value range 0-1024
+  double sensVoltage = (sensValue/1024)*v_ref; // calculate voltage in mV
+  double mAmp = ((sensVoltage - offset)/66.0)*1000.0; // [mA], sensor measures 66 mV/A
   
-  if(current >= cutoff_current){ //no feedback
+  current = mAmp; // [mA] convert double to int -> Rundet nicht richtig!!
+
+ // check current limits 
+  if(current >= positive_cutoff_current){
     // DISCONNECT! 
+    battery_switch = false; 
+    current_fault = true;
   }
+
+  if(current <= negative_cutoff_current){
+    // DISCONNECT! 
+    battery_switch = false; 
+    current_fault = true; 
+  }
+
+  /*
+  // Display
+  Serial.print("sensor value = ");
+  Serial.print(sensValue);
+  Serial.print("\t sensor voltage in mV = ");
+  Serial.print(sensVoltage);
+  Serial.print("\t mAmp = ");
+  Serial.print(mAmp); 
+  Serial.print("\t current in mA = ");
+  Serial.print(current); 
+  Serial.print("\n");
+  */
+ 
 }
 
 void checkVoltage(){
