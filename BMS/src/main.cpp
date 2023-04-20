@@ -63,10 +63,10 @@ const unsigned int BATTERY_SWITCH_PIN = 26;
 // **************************************************************
 
 // ********************* functions ******************************
+double readThermisterSE017();
 void checkCurrent_withACS712();
 void checkVoltage();
 void checkTemp();
-double readThermisterSE017();
 void setFaultCondition();
 void setSafeCondition();
 void calculateSOC();
@@ -148,18 +148,30 @@ void checkVoltage(){
   int i = 0; 
 
   // read sensors
-  cell_1_V = analogRead(CELL_1_V_PIN); 
-  cell_2_V = analogRead(CELL_2_V_PIN);
-  cell_3_V = analogRead(CELL_3_V_PIN);
-  cell_4_V = analogRead(CELL_4_V_PIN);
+  int cell_1_sensValue = analogRead(CELL_1_V_PIN); 
+  int cell_2_sensValue = analogRead(CELL_2_V_PIN);
+  int cell_3_sensValue = analogRead(CELL_3_V_PIN);
+  int cell_4_sensValue = analogRead(CELL_4_V_PIN);
+
+  // compute voltage [mV]
+  cell_1_V = cell_1_sensValue * (v_ref/1023.0);
+  cell_2_V = cell_2_sensValue * (v_ref/1023.0);
+  cell_3_V = cell_3_sensValue * (v_ref/1023.0);
+  cell_4_V = cell_4_sensValue * (v_ref/1023.0); 
+
  
   //check for every value
   int cell_V[] = {cell_1_V, cell_2_V, cell_3_V, cell_4_V}; 
+  bool balance_status[] = {balance_status_1, balance_status_2, balance_status_3, balance_status_4};
   for(i=0; i < sizeof(cell_V); i++){ 
     if(cell_V[i] >= cutoff_voltage_upper_limit){ //high voltage
       // DISCHARGE!!! --> Balancing Enable
-    }else if(cell_V[i] <= cutoff_voltage_lower_limit){ //low voltage
-      // CHARGE!!!
+      balance_status[i] = true; 
+    }
+    
+    if(cell_V[i] <= cutoff_voltage_lower_limit){ //low voltage
+      // CHARGE!!! --> Balancing Disable
+      balance_status[i] = false;
     }
   }
 }
@@ -194,7 +206,7 @@ void checkTemperature(){
       battery_switch = false; 
       temp_fault = -1; 
     }
-  }
+  } 
 
   /*
   // Display
@@ -223,6 +235,8 @@ void calculateSOC(){
 
 
 void loop() {
+  
+  
   checkCurrent_withACS712();
   checkVoltage();
   checkTemp();
