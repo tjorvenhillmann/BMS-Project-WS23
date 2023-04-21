@@ -1,0 +1,91 @@
+(kicad_sch (version 20230121) (generator eeschema)
+
+  (uuid 524e7f14-feb0-4ca2-9425-a347c869bfa6)
+
+  (paper "A4")
+
+  (title_block
+    (title "BMS Project")
+    (date "2023-04-21")
+    (rev "V0.1")
+    (company "TH Ingolstadt")
+    (comment 1 "Author: ")
+    (comment 2 "Edited: ")
+  )
+
+  (lib_symbols
+  )
+
+
+  (sheet (at 119.38 73.66) (size 27.94 22.86) (fields_autoplaced)
+    (stroke (width 0.1524) (type solid))
+    (fill (color 0 0 0 0.0000))
+    (uuid 991268b7-e362-463f-9f04-bcec0fe70615)
+    (property "Sheetname" "Arduino" (at 119.38 72.9484 0)
+      (effects (font (size 1.27 1.27)) (justify left bottom))
+    )
+    (property "Sheetfile" "Arduino.kicad_sch" (at 119.38 97.1046 0)
+      (effects (font (size 1.27 1.27)) (justify left top))
+    )
+    (instances
+      (project "BMS_Project"
+        (path "/524e7f14-feb0-4ca2-9425-a347c869bfa6" (page "4"))
+      )
+    )
+  )
+
+  (sheet (at 146.05 114.3) (size 31.75 19.05) (fields_autoplaced)
+    (stroke (width 0.1524) (type solid))
+    (fill (color 0 0 0 0.0000))
+    (uuid c6944dfe-4300-4ed2-a444-4e03c3340243)
+    (property "Sheetname" "Batteriezellen" (at 146.05 113.5884 0)
+      (effects (font (size 1.27 1.27)) (justify left bottom))
+    )
+    (property "Sheetfile" "Batteriezellen.kicad_sch" (at 146.05 133.9346 0)
+      (effects (font (size 1.27 1.27)) (justify left top))
+    )
+    (instances
+      (project "BMS_Project"
+        (path "/524e7f14-feb0-4ca2-9425-a347c869bfa6" (page "5"))
+      )
+    )
+  )
+
+  (sheet (at 55.88 95.25) (size 33.02 25.4) (fields_autoplaced)
+    (stroke (width 0.1524) (type solid))
+    (fill (color 0 0 0 0.0000))
+    (uuid d60b6f2f-e13e-4849-9977-88b541f58c2b)
+    (property "Sheetname" "Balancing" (at 55.88 94.5384 0)
+      (effects (font (size 1.27 1.27)) (justify left bottom))
+    )
+    (property "Sheetfile" "Balancing.kicad_sch" (at 55.88 121.2346 0)
+      (effects (font (size 1.27 1.27)) (justify left top))
+    )
+    (instances
+      (project "BMS_Project"
+        (path "/524e7f14-feb0-4ca2-9425-a347c869bfa6" (page "3"))
+      )
+    )
+  )
+
+  (sheet (at 48.26 54.61) (size 38.1 19.05) (fields_autoplaced)
+    (stroke (width 0.1524) (type solid))
+    (fill (color 0 0 0 0.0000))
+    (uuid d8f12774-e346-4091-abf5-b4c43e81469c)
+    (property "Sheetname" "U_Messung" (at 48.26 53.8984 0)
+      (effects (font (size 1.27 1.27)) (justify left bottom))
+    )
+    (property "Sheetfile" "U_Messung.kicad_sch" (at 48.26 74.2446 0)
+      (effects (font (size 1.27 1.27)) (justify left top))
+    )
+    (instances
+      (project "BMS_Project"
+        (path "/524e7f14-feb0-4ca2-9425-a347c869bfa6" (page "2"))
+      )
+    )
+  )
+
+  (sheet_instances
+    (path "/" (page "1"))
+  )
+)
