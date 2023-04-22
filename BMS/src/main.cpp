@@ -5,15 +5,18 @@
 bool safe = false; 
 int SOC = 0; // values from 0 to 100
 int balThreshold = 30; // threshold for balancing [mV]
+int stopBalThreshold = 5; // threshold for stopping [mV]
 
 // calibration data 
 int v_ref = 5000; // reference voltage in mV
 double temp_sens_offset = 12; // offset for temp_sensor [C]
 
-// fault indications 
+// status indications 
 bool current_fault = false; 
 int temp_fault = 0; // 1: high temp; -1: low temp
 int voltage_fault[4] = {0, 0, 0, 0}; // 1: high voltage; -1: low voltage 
+int voltage_status[4] = {0, 0, 0, 0}; // voltage within balancing threshold to cut-off
+                                      // 1: high voltage; -1: low voltage 
 
 // measurement data 
 float temp_1 = 0; 
@@ -165,18 +168,24 @@ void checkVoltage(){
   //check for every value
   int cell_V[] = {cell_1_V, cell_2_V, cell_3_V, cell_4_V}; 
   int j = sizeof(cell_V)/sizeof(cell_V[0]);
-  bool balance_status[] = {balance_status_1, balance_status_2, balance_status_3, balance_status_4};
+
   for(i=0; i<j; i++){ 
-    if(cell_V[i] >= cutoff_voltage_upper_limit){ //high voltage
-      // DISCHARGE!!! --> Balancing Enable
-      balance_status[i] = true; 
+    // Cut-off Check
+    if(cell_V[i] >= cutoff_voltage_upper_limit){ // high voltage
       voltage_fault[i] = 1; 
-    }
-    
-    if(cell_V[i] <= cutoff_voltage_lower_limit){ //low voltage
-      // CHARGE!!! --> Balancing Disable
-      balance_status[i] = false;
+    }else if(cell_V[i] <= cutoff_voltage_lower_limit){ // low voltage
       voltage_fault[i] = -1; 
+    }else{
+      voltage_fault[i] = 0; 
+    }
+
+    // Status Check
+    if(cell_V[i] >= cutoff_voltage_upper_limit-balThreshold){ // on upper limit 
+      voltage_status[i] = 1; 
+    }else if(cell_V[i] >= cutoff_voltage_lower_limit+balThreshold){ // on lower limit 
+      voltage_status[i] = -1; 
+    }else{
+      voltage_status[i] = 0; 
     }
   }
 }
@@ -230,7 +239,7 @@ void controlBalancing(){
   int i = 0; 
   int cell_V[] = {cell_1_V, cell_2_V, cell_3_V, cell_4_V}; 
   int j = sizeof(cell_V)/sizeof(cell_V[0]);
-  bool balance_status[] = {balance_status_1, balance_status_2, balance_status_3, balance_status_4};
+  bool balance_status[4] = {balance_status_1, balance_status_2, balance_status_3, balance_status_4};
   int maxVol = cell_V[0]; // [mV]
   int minVol = cell_V[0]; // [mV]
   int maxVol_index = 1; 
@@ -253,14 +262,30 @@ void controlBalancing(){
     }
   }
 
+  // Balancing control based on cell voltage difference
   // calculate difference
   volDiff = maxVol - minVol; 
-  
-  // enable balancing if necessary
+  // enable balancing of cell with highest voltage if necessary
   if(volDiff > balThreshold){
-    
+    balance_status[maxVol_index] = true;
   }
-  // disable balancing if necessary 
+  // disable balancing of all cells, if balanced
+  if(volDiff < stopBalThreshold){
+    for(i=0; i<j; i++){
+      balance_status[i] = false;
+    }
+  }
+
+  // Balancing control based on cell voltages 
+  for(i=0; i<j; i++){
+    if(voltage_status[i] = 1){ // voltage on upper limit -> enable 
+      balance_status[i] = true; 
+    }
+
+    if(voltage_status[i] = -1){ // voltage on lower limit -> disable
+      balance_status[i] = false; 
+    }
+  }
 }
 
 void setFaultCondition(){
