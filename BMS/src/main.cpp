@@ -4,6 +4,7 @@
 // ********************** global definitions **********************
 bool safe = false; 
 int SOC = 0; // values from 0 to 100
+int balThreshold = 30; // threshold for balancing [mV]
 
 // calibration data 
 int v_ref = 5000; // reference voltage in mV
@@ -12,12 +13,13 @@ double temp_sens_offset = 12; // offset for temp_sensor [C]
 // fault indications 
 bool current_fault = false; 
 int temp_fault = 0; // 1: high temp; -1: low temp
+int voltage_fault[4] = {0, 0, 0, 0}; // 1: high voltage; -1: low voltage 
 
 // measurement data 
-int temp_1 = 0; 
-int temp_2 = 0; 
-int temp_3 = 0; 
-int temp_4 = 0; 
+float temp_1 = 0; 
+float temp_2 = 0; 
+float temp_3 = 0; 
+float temp_4 = 0; 
 int cell_1_V = 0; 
 int cell_2_V = 0; 
 int cell_3_V = 0; 
@@ -32,8 +34,8 @@ bool balance_status_4 = false;
 bool battery_switch = false;
 
 // safety limits (read-only)
-const int cutoff_temp_upper_limit = 60; // [°C]
-const int cutoff_temp_lower_limit = -20; // [°C]
+const float cutoff_temp_upper_limit = 60; // [°C]
+const float cutoff_temp_lower_limit = -20; // [°C]
 const int cutoff_voltage_lower_limit = 3200; // [mV]
 const int cutoff_voltage_upper_limit = 4200; // [mV]
 const int positive_cutoff_current = 30000; // current maximum 30A [mA] 
@@ -67,6 +69,7 @@ double readThermisterSE017();
 void checkCurrent_withACS712();
 void checkVoltage();
 void checkTemp();
+void controlBalancing(); 
 void setFaultCondition();
 void setSafeCondition();
 void calculateSOC();
@@ -75,8 +78,7 @@ void calculateSOC();
 
 
 void setup() {
-  // put your setup code here, to run once:
-
+  // put your setup code here, to run once: 
   // Pin configuration
   // Analouge pins A0-A3 for temperature sensors
   pinMode(TEMP_1_PIN, INPUT); 
@@ -98,8 +100,8 @@ void setup() {
   pinMode(BATTERY_SWITCH_PIN, OUTPUT); 
 }
 
-double readThermisterSE017(int RawADC){
-  double lnR, Temp; 
+float readThermisterSE017(int RawADC){
+  float lnR, Temp; 
   lnR = log(((10240000/RawADC) - 10000)); 
   Temp = 1/(0.001129148 + (0.000234125 + (0.0000000876741 * lnR * lnR )) * lnR);
   Temp = -1*(Temp - 273.15 - temp_sens_offset); 
@@ -162,16 +164,19 @@ void checkVoltage(){
  
   //check for every value
   int cell_V[] = {cell_1_V, cell_2_V, cell_3_V, cell_4_V}; 
+  int j = sizeof(cell_V)/sizeof(cell_V[0]);
   bool balance_status[] = {balance_status_1, balance_status_2, balance_status_3, balance_status_4};
-  for(i=0; i < sizeof(cell_V); i++){ 
+  for(i=0; i<j; i++){ 
     if(cell_V[i] >= cutoff_voltage_upper_limit){ //high voltage
       // DISCHARGE!!! --> Balancing Enable
       balance_status[i] = true; 
+      voltage_fault[i] = 1; 
     }
     
     if(cell_V[i] <= cutoff_voltage_lower_limit){ //low voltage
       // CHARGE!!! --> Balancing Disable
       balance_status[i] = false;
+      voltage_fault[i] = -1; 
     }
   }
 }
@@ -192,8 +197,8 @@ void checkTemperature(){
   temp_4 = readThermisterSE017(temp_4_sensValue);
 
   //check for every value
-  int temp_C[] = {temp_1, temp_2, temp_3, temp_4}; 
-  for(i=0; i < sizeof(temp_C); i++){ 
+  float temp_C[] = {temp_1, temp_2, temp_3, temp_4}; 
+  for(i=0; i < (sizeof(temp_C)/sizeof(temp_C[0])); i++){ 
     //high temperature
     if(temp_C[i] >= cutoff_temp_upper_limit){ 
       // DISCONNECT !!! 
@@ -221,6 +226,43 @@ void checkTemperature(){
   */
 }
 
+void controlBalancing(){
+  int i = 0; 
+  int cell_V[] = {cell_1_V, cell_2_V, cell_3_V, cell_4_V}; 
+  int j = sizeof(cell_V)/sizeof(cell_V[0]);
+  bool balance_status[] = {balance_status_1, balance_status_2, balance_status_3, balance_status_4};
+  int maxVol = cell_V[0]; // [mV]
+  int minVol = cell_V[0]; // [mV]
+  int maxVol_index = 1; 
+  int minVol_index = 1; 
+  int volDiff = 0; 
+
+  // find maximum voltage 
+  for(i=0; i<j; i++){
+    if(cell_V[i] > maxVol){
+      maxVol = cell_V[i];
+      maxVol_index = i; 
+    }
+  }
+  // find minimum voltage
+  i = 0;  
+  for(i=0; i<j; i++){
+    if(cell_V[i] < minVol){
+      minVol = cell_V[i];
+      minVol_index = i; 
+    }
+  }
+
+  // calculate difference
+  volDiff = maxVol - minVol; 
+  
+  // enable balancing if necessary
+  if(volDiff > balThreshold){
+    
+  }
+  // disable balancing if necessary 
+}
+
 void setFaultCondition(){
 
 }
@@ -236,7 +278,7 @@ void calculateSOC(){
 
 void loop() {
   
-  
+   
   checkCurrent_withACS712();
   checkVoltage();
   checkTemp();
