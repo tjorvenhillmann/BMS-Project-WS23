@@ -1,0 +1,11 @@
+## Installation
+Tested for KiCad_6 and KiCad_7
+
+- KiCad Symbol Editor -> Preferences -> Manage Symbol Libraries -> Add existing library to table (folder icon) -> select BMS_lib.kicad_sym file -> OK
+
+- KiCad Footprint Editor -> Preferences -> Manage Footprint Libraries -> Add folder with kicad.mod files (folder icon) -> select BMS_lib.pretty folder -> OK
+
+- KiCad Footprint Editor -> Select random footprint(double click) -> edit footprint properties (IC-icon) -> tab 3D models -> configure paths -> new 3D search path -> alias="BMS_3D" Path=path to 3D folder inside of BMS_lib -> OK
+
+Test: Place one of the things inside BMS_lib into a new kicad schematic, place it on the board file and view the board file with view->3d viewer.
+There should be a 3d model. The cell holder just has a box as 3d model.
