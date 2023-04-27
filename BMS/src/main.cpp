@@ -2,14 +2,21 @@
 #include <math.h>
 
 // ********************** global definitions **********************
-bool safe = false; 
-int SOC = 0; // values from 0 to 100
+// bool safe = false; 
+unsigned long prev_time = 0; 
+float prev_voltage = 0; 
+float soc = 0; // values from 0 to 100
+float soh = 0; 
+float rul = 0; 
 int balThreshold = 30; // threshold for balancing [mV]
 int stopBalThreshold = 5; // threshold for stopping [mV]
 
 // calibration data 
 int v_ref = 5000; // reference voltage in mV
 double temp_sens_offset = 12; // offset for temp_sensor [C]
+
+// battery parameters
+float nom_capacity = 1000; 
 
 // status indications 
 bool current_fault = false; 
@@ -73,9 +80,9 @@ void checkCurrent_withACS712();
 void checkVoltage();
 void checkTemp();
 void controlBalancing(); 
-void setFaultCondition();
-void setSafeCondition();
-void calculateSOC();
+// void setFaultCondition();
+// void setSafeCondition();
+void battery_state();
 
 // **************************************************************
 
@@ -122,15 +129,13 @@ void checkCurrent_withACS712(){
 
  // check current limits 
   if(current >= positive_cutoff_current){
-    // DISCONNECT! 
     battery_switch = false; 
     current_fault = true;
-  }
-
-  if(current <= negative_cutoff_current){
-    // DISCONNECT! 
+  }else if(current <= negative_cutoff_current){
     battery_switch = false; 
     current_fault = true; 
+  }else{
+    current_fault = false;
   }
 
   /*
@@ -170,15 +175,6 @@ void checkVoltage(){
   int j = sizeof(cell_V)/sizeof(cell_V[0]);
 
   for(i=0; i<j; i++){ 
-    // Cut-off Check
-    if(cell_V[i] >= cutoff_voltage_upper_limit){ // high voltage
-      voltage_fault[i] = 1; 
-    }else if(cell_V[i] <= cutoff_voltage_lower_limit){ // low voltage
-      voltage_fault[i] = -1; 
-    }else{
-      voltage_fault[i] = 0; 
-    }
-
     // Status Check
     if(cell_V[i] >= cutoff_voltage_upper_limit-balThreshold){ // on upper limit 
       voltage_status[i] = 1; 
@@ -186,6 +182,16 @@ void checkVoltage(){
       voltage_status[i] = -1; 
     }else{
       voltage_status[i] = 0; 
+    }
+    // Cut-off Check
+    if(cell_V[i] >= cutoff_voltage_upper_limit){ // high voltage
+      voltage_fault[i] = 1; 
+      voltage_status[i] = 0; 
+    }else if(cell_V[i] <= cutoff_voltage_lower_limit){ // low voltage
+      voltage_fault[i] = -1; 
+      voltage_status[i] = 0; 
+    }else{
+      voltage_fault[i] = 0; 
     }
   }
 }
@@ -213,12 +219,12 @@ void checkTemperature(){
       // DISCONNECT !!! 
       battery_switch = false; 
       temp_fault = 1; 
-    }
-    //low temperature
-    if(temp_C[i] <= cutoff_temp_lower_limit){ 
+    }else if(temp_C[i] <= cutoff_temp_lower_limit){ //low temperature
       // DISCONNECT !!!
       battery_switch = false; 
       temp_fault = -1; 
+    }else{
+      temp_fault = 0; 
     }
   } 
 
@@ -296,24 +302,40 @@ void setSafeCondition(){
 
 }
 
-void calculateSOC(){
+void battery_state(){
+  unsigned long current_time = millis(); 
+  float elapsed_time = (current_time-prev_time)/1000.0; 
+  float charge_change = (current/1000.0) * elapsed_time/3600.0; // [As]
+  float medium_vol = ((cell_1_V+cell_2_V+cell_3_V+cell_4_V)/4.0); // [mV]
 
+  // SOC
+  float new_soc = soc - 100 * charge_change/(nom_capacity/1000.0); 
+  soc = max(0.0, min(100.0, new_soc)); 
+
+  // SOH 
+  float new_soh = 100 * (medium_vol/cutoff_voltage_upper_limit)/1000.0 * (soc/100); 
+  soh = max(0.0, min(100.0, new_soh)); 
+
+  // RUL
+  float new_rul = 100 * (1- (soc/100)) * (soh/100); 
+  rul = max(0.0, min(100.0, new_rul)); 
+
+  prev_time = current_time; 
+  prev_voltage = medium_vol;
 }
 
 
 void loop() {
-  
-   
   checkCurrent_withACS712();
   checkVoltage();
   checkTemp();
+  controlBalancing();
+  battery_state();
 
-  // safety
+  /* // safety
   if(safe==1){
     setSafeCondition();
   }else{
     setFaultCondition();
-  }
-
-  calculateSOC();
+  } */
 }
