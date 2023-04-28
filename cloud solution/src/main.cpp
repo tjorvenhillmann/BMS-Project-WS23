@@ -13,9 +13,9 @@ ESP8266WiFiMulti wifiMulti;
 #include <InfluxDbCloud.h>
 
 // WiFi AP SSID
-#define WIFI_SSID ""
+#define WIFI_SSID "Pixel7"
 // WiFi password
-#define WIFI_PASSWORD ""
+#define WIFI_PASSWORD "423fa176fba"
 // InfluxDB v2 server url, e.g. https://eu-central-1-1.aws.cloud2.influxdata.com (Use: InfluxDB UI -> Load Data -> Client Libraries)
 // InfluxDB 1.8+  (v2 compatibility API) server url, e.g. http://192.168.1.48:8086
 #define INFLUXDB_URL "https://eu-central-1-1.aws.cloud2.influxdata.com"
@@ -41,9 +41,87 @@ ESP8266WiFiMulti wifiMulti;
 // InfluxDB client instance with preconfigured InfluxCloud certificate
 InfluxDBClient client(INFLUXDB_URL, INFLUXDB_ORG, INFLUXDB_BUCKET, INFLUXDB_TOKEN, InfluxDbCloud2CACert);
 
-
 // Data point
 Point sensor("wifi_status");
+
+// Real data points
+Point bms_data("bms_status");
+
+struct Voltages
+{
+  float cell_V1 = 0;
+  float cell_V2 = 0;
+  float cell_V3 = 0;
+  float cell_V4 = 0; 
+};
+
+struct Temps
+{
+  float temp1 = 0;
+  float temp2 = 0;
+  float temp3 = 0;
+  float temp4 = 0;
+};
+
+struct Rest
+{
+  float current = 0;
+  uint16_t soc = 0;
+  uint16_t soh = 0; // %
+  uint16_t cap = 0; // mAh
+};
+
+struct Status
+{
+  bool balance_status1 = 0;
+  bool balance_status2 = 0;
+  bool balance_status3 = 0;
+  bool balance_status4 = 0;
+};
+
+// Create struct objects
+Voltages voltages;
+Temps temps;
+Rest rest;
+Status status;
+
+void set_random_voltages() {
+  int v1 = 0;
+  int v2 = 0;
+  int v3 = 0;
+  int v4 = 0;
+  v1 = random(300,420);
+  v2 = random(300,420);
+  v3 = random(300,420);
+  v4 = random(300,420);
+  voltages.cell_V1 = v1/100.0;
+  voltages.cell_V2 = v2/100.0;
+  voltages.cell_V3 = v3/100.0;
+  voltages.cell_V4 = v4/100.0;
+  Serial.println(voltages.cell_V1);
+  Serial.println(voltages.cell_V2);
+  Serial.println(voltages.cell_V3);
+  Serial.println(voltages.cell_V4);
+}
+
+void set_random_temps(){
+  int t1 = 0;
+  int t2 = 0;
+  int t3 = 0;
+  int t4 = 0;
+  t1 = random(15,50);
+  t2 = random(15,50);
+  t3 = random(15,50);
+  t4 = random(15,50);
+  temps.temp1 = t1/100.0;
+  temps.temp2 = t2/100.0;
+  temps.temp3 = t3/100.0;
+  temps.temp4 = t4/100.0;
+  Serial.println(temps.temp1);
+  Serial.println(temps.temp2);
+  Serial.println(temps.temp3);
+  Serial.println(temps.temp4);
+}
 
 void setup() {
   Serial.begin(115200);
@@ -83,18 +161,29 @@ void setup() {
 
 void loop() {
   // Store measured value into point
-  sensor.clearFields();
+  bms_data.clearFields();
   // Report RSSI of currently connected network
-  sensor.addField("rssi", WiFi.RSSI());
+  set_random_voltages();
+  set_random_temps();
+  bms_data.addField("cell_V1", voltages.cell_V1);
+  bms_data.addField("cell_V2", voltages.cell_V2);
+  bms_data.addField("cell_V3", voltages.cell_V3);
+  bms_data.addField("cell_V4", voltages.cell_V4);
+  bms_data.addField("Temp1", temps.temp1);
+  bms_data.addField("Temp2", temps.temp2);
+  bms_data.addField("Temp3", temps.temp3);
+  bms_data.addField("Temp4", temps.temp4);
+
   // Print what are we exactly writing
   Serial.print("Writing: ");
-  Serial.println(client.pointToLineProtocol(sensor));
+  Serial.println(client.pointToLineProtocol(bms_data));
   // If no Wifi signal, try to reconnect it
   if (wifiMulti.run() != WL_CONNECTED) {
     Serial.println("Wifi connection lost");
   }
+
   // Write point
-  if (!client.writePoint(sensor)) {
+  if (!client.writePoint(bms_data)) {
     Serial.print("InfluxDB write failed: ");
     Serial.println(client.getLastErrorMessage());
   }
