@@ -653,6 +653,11 @@
           (reference "R21") (unit 1)
         )
       )
+      (project "Cell_holder_board"
+        (path "/c2697d40-f04f-4888-9ae9-ce0b7f222632/82ef2b84-f8e9-444b-b1de-3eea7f1fff66"
+          (reference "R8") (unit 1)
+        )
+      )
       (project "Test_Projekt"
         (path "/d5b120ca-a0f0-4b3f-8fab-ca010d94ac2e"
           (reference "R27") (unit 1)
@@ -685,6 +690,11 @@
         )
         (path "/524e7f14-feb0-4ca2-9425-a347c869bfa6/d60b6f2f-e13e-4849-9977-88b541f58c2b"
           (reference "R20") (unit 1)
+        )
+      )
+      (project "Cell_holder_board"
+        (path "/c2697d40-f04f-4888-9ae9-ce0b7f222632/82ef2b84-f8e9-444b-b1de-3eea7f1fff66"
+          (reference "R7") (unit 1)
         )
       )
       (project "Test_Projekt"
@@ -723,6 +733,11 @@
           (reference "U6") (unit 1)
         )
       )
+      (project "Cell_holder_board"
+        (path "/c2697d40-f04f-4888-9ae9-ce0b7f222632/82ef2b84-f8e9-444b-b1de-3eea7f1fff66"
+          (reference "U9") (unit 1)
+        )
+      )
       (project "Test_Projekt"
         (path "/d5b120ca-a0f0-4b3f-8fab-ca010d94ac2e"
           (reference "U2") (unit 1)
@@ -755,6 +770,11 @@
         )
         (path "/524e7f14-feb0-4ca2-9425-a347c869bfa6/d60b6f2f-e13e-4849-9977-88b541f58c2b"
           (reference "R25") (unit 1)
+        )
+      )
+      (project "Cell_holder_board"
+        (path "/c2697d40-f04f-4888-9ae9-ce0b7f222632/82ef2b84-f8e9-444b-b1de-3eea7f1fff66"
+          (reference "R12") (unit 1)
         )
       )
       (project "Test_Projekt"
@@ -792,6 +812,11 @@
           (reference "Q2") (unit 1)
         )
       )
+      (project "Cell_holder_board"
+        (path "/c2697d40-f04f-4888-9ae9-ce0b7f222632/82ef2b84-f8e9-444b-b1de-3eea7f1fff66"
+          (reference "Q4") (unit 1)
+        )
+      )
       (project "Test_Projekt"
         (path "/d5b120ca-a0f0-4b3f-8fab-ca010d94ac2e"
           (reference "Q3") (unit 1)
@@ -823,6 +848,11 @@
         )
         (path "/524e7f14-feb0-4ca2-9425-a347c869bfa6/d60b6f2f-e13e-4849-9977-88b541f58c2b"
           (reference "#PWR010") (unit 1)
+        )
+      )
+      (project "Cell_holder_board"
+        (path "/c2697d40-f04f-4888-9ae9-ce0b7f222632/82ef2b84-f8e9-444b-b1de-3eea7f1fff66"
+          (reference "#PWR04") (unit 1)
         )
       )
       (project "Test_Projekt"
@@ -861,6 +891,11 @@
           (reference "U5") (unit 1)
         )
       )
+      (project "Cell_holder_board"
+        (path "/c2697d40-f04f-4888-9ae9-ce0b7f222632/82ef2b84-f8e9-444b-b1de-3eea7f1fff66"
+          (reference "U8") (unit 1)
+        )
+      )
       (project "Test_Projekt"
         (path "/d5b120ca-a0f0-4b3f-8fab-ca010d94ac2e"
           (reference "U4") (unit 1)
@@ -893,6 +928,11 @@
         )
         (path "/524e7f14-feb0-4ca2-9425-a347c869bfa6/d60b6f2f-e13e-4849-9977-88b541f58c2b"
           (reference "R28") (unit 1)
+        )
+      )
+      (project "Cell_holder_board"
+        (path "/c2697d40-f04f-4888-9ae9-ce0b7f222632/82ef2b84-f8e9-444b-b1de-3eea7f1fff66"
+          (reference "R15") (unit 1)
         )
       )
       (project "Test_Projekt"
@@ -929,6 +969,11 @@
           (reference "R26") (unit 1)
         )
       )
+      (project "Cell_holder_board"
+        (path "/c2697d40-f04f-4888-9ae9-ce0b7f222632/82ef2b84-f8e9-444b-b1de-3eea7f1fff66"
+          (reference "R13") (unit 1)
+        )
+      )
       (project "Test_Projekt"
         (path "/d5b120ca-a0f0-4b3f-8fab-ca010d94ac2e"
           (reference "R20") (unit 1)
@@ -961,6 +1006,11 @@
         )
         (path "/524e7f14-feb0-4ca2-9425-a347c869bfa6/d60b6f2f-e13e-4849-9977-88b541f58c2b"
           (reference "R18") (unit 1)
+        )
+      )
+      (project "Cell_holder_board"
+        (path "/c2697d40-f04f-4888-9ae9-ce0b7f222632/82ef2b84-f8e9-444b-b1de-3eea7f1fff66"
+          (reference "R5") (unit 1)
         )
       )
       (project "Test_Projekt"
@@ -996,6 +1046,11 @@
           (reference "#PWR014") (unit 1)
         )
       )
+      (project "Cell_holder_board"
+        (path "/c2697d40-f04f-4888-9ae9-ce0b7f222632/82ef2b84-f8e9-444b-b1de-3eea7f1fff66"
+          (reference "#PWR08") (unit 1)
+        )
+      )
       (project "Test_Projekt"
         (path "/d5b120ca-a0f0-4b3f-8fab-ca010d94ac2e"
           (reference "#PWR023") (unit 1)
@@ -1027,6 +1082,11 @@
         )
         (path "/524e7f14-feb0-4ca2-9425-a347c869bfa6/d60b6f2f-e13e-4849-9977-88b541f58c2b"
           (reference "#PWR012") (unit 1)
+        )
+      )
+      (project "Cell_holder_board"
+        (path "/c2697d40-f04f-4888-9ae9-ce0b7f222632/82ef2b84-f8e9-444b-b1de-3eea7f1fff66"
+          (reference "#PWR06") (unit 1)
         )
       )
       (project "Test_Projekt"
@@ -1061,6 +1121,11 @@
         )
         (path "/524e7f14-feb0-4ca2-9425-a347c869bfa6/d60b6f2f-e13e-4849-9977-88b541f58c2b"
           (reference "R22") (unit 1)
+        )
+      )
+      (project "Cell_holder_board"
+        (path "/c2697d40-f04f-4888-9ae9-ce0b7f222632/82ef2b84-f8e9-444b-b1de-3eea7f1fff66"
+          (reference "R9") (unit 1)
         )
       )
       (project "Test_Projekt"
@@ -1099,6 +1164,11 @@
           (reference "U4") (unit 1)
         )
       )
+      (project "Cell_holder_board"
+        (path "/c2697d40-f04f-4888-9ae9-ce0b7f222632/82ef2b84-f8e9-444b-b1de-3eea7f1fff66"
+          (reference "U7") (unit 1)
+        )
+      )
       (project "Test_Projekt"
         (path "/d5b120ca-a0f0-4b3f-8fab-ca010d94ac2e"
           (reference "U5") (unit 1)
@@ -1130,6 +1200,11 @@
         )
         (path "/524e7f14-feb0-4ca2-9425-a347c869bfa6/d60b6f2f-e13e-4849-9977-88b541f58c2b"
           (reference "#PWR017") (unit 1)
+        )
+      )
+      (project "Cell_holder_board"
+        (path "/c2697d40-f04f-4888-9ae9-ce0b7f222632/82ef2b84-f8e9-444b-b1de-3eea7f1fff66"
+          (reference "#PWR011") (unit 1)
         )
       )
       (project "Test_Projekt"
@@ -1166,6 +1241,11 @@
           (reference "R27") (unit 1)
         )
       )
+      (project "Cell_holder_board"
+        (path "/c2697d40-f04f-4888-9ae9-ce0b7f222632/82ef2b84-f8e9-444b-b1de-3eea7f1fff66"
+          (reference "R14") (unit 1)
+        )
+      )
       (project "Test_Projekt"
         (path "/d5b120ca-a0f0-4b3f-8fab-ca010d94ac2e"
           (reference "R13") (unit 1)
@@ -1200,6 +1280,11 @@
           (reference "R19") (unit 1)
         )
       )
+      (project "Cell_holder_board"
+        (path "/c2697d40-f04f-4888-9ae9-ce0b7f222632/82ef2b84-f8e9-444b-b1de-3eea7f1fff66"
+          (reference "R6") (unit 1)
+        )
+      )
       (project "Test_Projekt"
         (path "/d5b120ca-a0f0-4b3f-8fab-ca010d94ac2e"
           (reference "R11") (unit 1)
@@ -1232,6 +1317,11 @@
         )
         (path "/524e7f14-feb0-4ca2-9425-a347c869bfa6/d60b6f2f-e13e-4849-9977-88b541f58c2b"
           (reference "R17") (unit 1)
+        )
+      )
+      (project "Cell_holder_board"
+        (path "/c2697d40-f04f-4888-9ae9-ce0b7f222632/82ef2b84-f8e9-444b-b1de-3eea7f1fff66"
+          (reference "R4") (unit 1)
         )
       )
       (project "Test_Projekt"
@@ -1269,6 +1359,11 @@
           (reference "Q1") (unit 1)
         )
       )
+      (project "Cell_holder_board"
+        (path "/c2697d40-f04f-4888-9ae9-ce0b7f222632/82ef2b84-f8e9-444b-b1de-3eea7f1fff66"
+          (reference "Q3") (unit 1)
+        )
+      )
       (project "Test_Projekt"
         (path "/d5b120ca-a0f0-4b3f-8fab-ca010d94ac2e"
           (reference "Q4") (unit 1)
@@ -1303,6 +1398,11 @@
           (reference "R23") (unit 1)
         )
       )
+      (project "Cell_holder_board"
+        (path "/c2697d40-f04f-4888-9ae9-ce0b7f222632/82ef2b84-f8e9-444b-b1de-3eea7f1fff66"
+          (reference "R10") (unit 1)
+        )
+      )
       (project "Test_Projekt"
         (path "/d5b120ca-a0f0-4b3f-8fab-ca010d94ac2e"
           (reference "R12") (unit 1)
@@ -1334,6 +1434,11 @@
         )
         (path "/524e7f14-feb0-4ca2-9425-a347c869bfa6/d60b6f2f-e13e-4849-9977-88b541f58c2b"
           (reference "#PWR025") (unit 1)
+        )
+      )
+      (project "Cell_holder_board"
+        (path "/c2697d40-f04f-4888-9ae9-ce0b7f222632/82ef2b84-f8e9-444b-b1de-3eea7f1fff66"
+          (reference "#PWR03") (unit 1)
         )
       )
       (project "Test_Projekt"
@@ -1371,6 +1476,11 @@
           (reference "Q3") (unit 1)
         )
       )
+      (project "Cell_holder_board"
+        (path "/c2697d40-f04f-4888-9ae9-ce0b7f222632/82ef2b84-f8e9-444b-b1de-3eea7f1fff66"
+          (reference "Q5") (unit 1)
+        )
+      )
       (project "Test_Projekt"
         (path "/d5b120ca-a0f0-4b3f-8fab-ca010d94ac2e"
           (reference "Q2") (unit 1)
@@ -1402,6 +1512,11 @@
         )
         (path "/524e7f14-feb0-4ca2-9425-a347c869bfa6/d60b6f2f-e13e-4849-9977-88b541f58c2b"
           (reference "#PWR013") (unit 1)
+        )
+      )
+      (project "Cell_holder_board"
+        (path "/c2697d40-f04f-4888-9ae9-ce0b7f222632/82ef2b84-f8e9-444b-b1de-3eea7f1fff66"
+          (reference "#PWR07") (unit 1)
         )
       )
       (project "Test_Projekt"
@@ -1436,6 +1551,11 @@
         )
         (path "/524e7f14-feb0-4ca2-9425-a347c869bfa6/d60b6f2f-e13e-4849-9977-88b541f58c2b"
           (reference "R24") (unit 1)
+        )
+      )
+      (project "Cell_holder_board"
+        (path "/c2697d40-f04f-4888-9ae9-ce0b7f222632/82ef2b84-f8e9-444b-b1de-3eea7f1fff66"
+          (reference "R11") (unit 1)
         )
       )
       (project "Test_Projekt"
@@ -1473,6 +1593,11 @@
           (reference "Q4") (unit 1)
         )
       )
+      (project "Cell_holder_board"
+        (path "/c2697d40-f04f-4888-9ae9-ce0b7f222632/82ef2b84-f8e9-444b-b1de-3eea7f1fff66"
+          (reference "Q6") (unit 1)
+        )
+      )
       (project "Test_Projekt"
         (path "/d5b120ca-a0f0-4b3f-8fab-ca010d94ac2e"
           (reference "Q1") (unit 1)
@@ -1506,6 +1631,11 @@
           (reference "#PWR015") (unit 1)
         )
       )
+      (project "Cell_holder_board"
+        (path "/c2697d40-f04f-4888-9ae9-ce0b7f222632/82ef2b84-f8e9-444b-b1de-3eea7f1fff66"
+          (reference "#PWR09") (unit 1)
+        )
+      )
       (project "Test_Projekt"
         (path "/d5b120ca-a0f0-4b3f-8fab-ca010d94ac2e"
           (reference "#PWR016") (unit 1)
@@ -1537,6 +1667,11 @@
         )
         (path "/524e7f14-feb0-4ca2-9425-a347c869bfa6/d60b6f2f-e13e-4849-9977-88b541f58c2b"
           (reference "#PWR011") (unit 1)
+        )
+      )
+      (project "Cell_holder_board"
+        (path "/c2697d40-f04f-4888-9ae9-ce0b7f222632/82ef2b84-f8e9-444b-b1de-3eea7f1fff66"
+          (reference "#PWR05") (unit 1)
         )
       )
       (project "Test_Projekt"
@@ -1575,6 +1710,11 @@
           (reference "U3") (unit 1)
         )
       )
+      (project "Cell_holder_board"
+        (path "/c2697d40-f04f-4888-9ae9-ce0b7f222632/82ef2b84-f8e9-444b-b1de-3eea7f1fff66"
+          (reference "U6") (unit 1)
+        )
+      )
       (project "Test_Projekt"
         (path "/d5b120ca-a0f0-4b3f-8fab-ca010d94ac2e"
           (reference "U6") (unit 1)
@@ -1606,6 +1746,11 @@
         )
         (path "/524e7f14-feb0-4ca2-9425-a347c869bfa6/d60b6f2f-e13e-4849-9977-88b541f58c2b"
           (reference "#PWR016") (unit 1)
+        )
+      )
+      (project "Cell_holder_board"
+        (path "/c2697d40-f04f-4888-9ae9-ce0b7f222632/82ef2b84-f8e9-444b-b1de-3eea7f1fff66"
+          (reference "#PWR010") (unit 1)
         )
       )
       (project "Test_Projekt"

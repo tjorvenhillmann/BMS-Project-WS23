@@ -342,6 +342,10 @@
     [
       "d1e5a9a1-ef5e-4043-b331-33dbe5a7732b",
       "Current_sensor"
+    ],
+    [
+      "82ef2b84-f8e9-444b-b1de-3eea7f1fff66",
+      "Balancing"
     ]
   ],
   "text_variables": {}
