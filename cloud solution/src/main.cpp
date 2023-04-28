@@ -109,10 +109,10 @@ void set_random_temps(){
   int t2 = 0;
   int t3 = 0;
   int t4 = 0;
-  t1 = random(15,50);
-  t2 = random(15,50);
-  t3 = random(15,50);
-  t4 = random(15,50);
+  t1 = random(1500,5000);
+  t2 = random(1500,5000);
+  t3 = random(1500,5000);
+  t4 = random(1500,5000);
   temps.temp1 = t1/100.0;
   temps.temp2 = t2/100.0;
   temps.temp3 = t3/100.0;
