@@ -9,6 +9,7 @@
 
 #include <LCDWIKI_GUI.h> //Core graphics library
 #include <LCDWIKI_KBV.h> //Hardware-specific library
+#include <math.h> // Math library
 
 LCDWIKI_KBV mylcd(ILI9486,A3,A2,A1,A0,A4); //model,cs,cd,wr,rd,reset
 
@@ -23,12 +24,18 @@ LCDWIKI_KBV mylcd(ILI9486,A3,A2,A1,A0,A4); //model,cs,cd,wr,rd,reset
 #define WHITE   0xFFFF
 
 //Functions
-void clearSOC ();
+void clearSOC (); //clears all segments
+void setSOC(); //sets the 1-5 green segments
+bool SOCchange(); //returns true if the SOC changed
 
+//Global variable
+int SOCold = 0;
+int SOC = 0;
 
 
 void setup() 
 {
+  Serial.begin(9600);
   mylcd.Init_LCD();
   mylcd.Fill_Screen(BLACK);
   mylcd.Invert_Display(1); //Needed in Order for the colours to be correct
@@ -70,7 +77,6 @@ void setup()
   mylcd.Draw_Round_Rectangle(20, 178, 90, 300, 6);
 
 
-
   //QUADRANT 4 (Voltage, Cell voltage)
   mylcd.Set_Text_colour(WHITE);
   mylcd.Set_Text_Size(3);
@@ -85,8 +91,77 @@ void setup()
 
 void clearSOC() {
   mylcd.Set_Draw_color(BLACK);
-  mylcd.Fill_Round_Rectangle(21, 181, 89, 299, 6);
+  mylcd.Fill_Round_Rectangle(21, 179, 89, 299, 6);
   }
+
+void setSOC(int SOC) {
+
+if (SOC >= 0 && SOC <= 20) //20%
+  {
+    clearSOC(); //Erase all segments
+    mylcd.Set_Draw_color(GREEN);
+    mylcd.Fill_Round_Rectangle(22,276,88,298,6); //5.
+  }
+  else if (SOC > 20 && SOC <= 40) //40%
+  {
+    clearSOC(); //Erase all segments
+    mylcd.Set_Draw_color(GREEN);
+    mylcd.Fill_Round_Rectangle(22,276,88,298,6); //5. 
+    mylcd.Fill_Round_Rectangle(22,252,88,274,6); //4. 
+
+  }
+  else if (SOC > 40 && SOC <= 60) //60%
+  {
+    clearSOC(); //Erase all segments
+    mylcd.Set_Draw_color(GREEN);
+    mylcd.Fill_Round_Rectangle(22,276,88,298,6); //5. 
+    mylcd.Fill_Round_Rectangle(22,252,88,274,6); //4. 
+    mylcd.Fill_Round_Rectangle(22,228,88,250,6); //3.
+
+  }
+  else if (SOC > 60 && SOC <= 80) //80%
+  {
+    clearSOC(); //Erase all segments
+    mylcd.Set_Draw_color(GREEN);
+    mylcd.Fill_Round_Rectangle(22,276,88,298,6); //5. 
+    mylcd.Fill_Round_Rectangle(22,252,88,274,6); //4. 
+    mylcd.Fill_Round_Rectangle(22,228,88,250,6); //3. 
+    mylcd.Fill_Round_Rectangle(22,204,88,226,6); //2.
+
+  }
+  else if (SOC > 80 && SOC <= 100)
+  {
+    clearSOC(); //Erase all segments
+    mylcd.Set_Draw_color(GREEN);
+    mylcd.Fill_Round_Rectangle(22,276,88,298,6); //5. 
+    mylcd.Fill_Round_Rectangle(22,252,88,274,6); //4. 
+    mylcd.Fill_Round_Rectangle(22,228,88,250,6); //3. 
+    mylcd.Fill_Round_Rectangle(22,204,88,226,6); //2.
+    mylcd.Fill_Round_Rectangle(22,180,88,202,6); //1.
+
+  }
+}
+
+bool SOCchange(int SOCnew) {
+SOCnew = (SOCnew-1) /20; // (-1 - 99) -> -1 - 4
+switch (SOCnew) {
+  case 0: SOCnew = 1; break;
+  case 1: SOCnew = 2; break;
+  case 2: SOCnew = 3; break;
+  case 3: SOCnew = 4; break;
+  case 4: SOCnew = 5; break;
+  default: clearSOC(); break;
+}
+
+if (SOCnew != SOCold) {
+  SOCold = SOCnew;
+  return true;
+}
+else {
+  return false;
+}
+
+}
 
 
 void loop() 
@@ -133,60 +208,11 @@ void loop()
 
   mylcd.Set_Text_colour(WHITE);
   mylcd.Print_String("SOC", 30, 150);
-
-
-
-  int segments = 0;
-  int SOC = 100;
-  //Aktualisierung erst wenn SOC sich so ändert, dass er in ne neue elif geht
-  if (SOC > 0 && SOC <= 20) //20%
-  {
-    
-    clearSOC(); //Erase all segments
-    mylcd.Set_Draw_color(GREEN);
-    mylcd.Fill_Round_Rectangle(22,276,88,298,6); //5.
+  SOC++;
+  if (SOCchange(SOC) == true) {
+    setSOC(SOC);
   }
-  else if (SOC > 20 && SOC <= 40) //40%
-  {
-    
-    clearSOC(); //Erase all segments
-    mylcd.Set_Draw_color(GREEN);
-    mylcd.Fill_Round_Rectangle(22,276,88,298,6); //5. 
-    mylcd.Fill_Round_Rectangle(22,252,88,274,6); //4. 
-
-  }
-  else if (SOC > 40 && SOC <= 60) //60%
-  {
-    clearSOC(); //Erase all segments
-    mylcd.Set_Draw_color(GREEN);
-    mylcd.Fill_Round_Rectangle(22,276,88,298,6); //5. 
-    mylcd.Fill_Round_Rectangle(22,252,88,274,6); //4. 
-    mylcd.Fill_Round_Rectangle(22,228,88,250,6); //3.
-
-  }
-  else if (SOC > 60 && SOC <= 80) //80%
-  {
-    clearSOC(); //Erase all segments
-    mylcd.Set_Draw_color(GREEN);
-    mylcd.Fill_Round_Rectangle(22,276,88,298,6); //5. 
-    mylcd.Fill_Round_Rectangle(22,252,88,274,6); //4. 
-    mylcd.Fill_Round_Rectangle(22,228,88,250,6); //3. 
-    mylcd.Fill_Round_Rectangle(22,204,88,226,6); //2.
-
-  }
-  else if (SOC > 80 && SOC <= 100)
-  {
-    clearSOC(); //Erase all segments
-    mylcd.Set_Draw_color(GREEN);
-    mylcd.Fill_Round_Rectangle(22,276,88,298,6); //5. 
-    mylcd.Fill_Round_Rectangle(22,252,88,274,6); //4. 
-    mylcd.Fill_Round_Rectangle(22,228,88,250,6); //3. 
-    mylcd.Fill_Round_Rectangle(22,204,88,226,6); //2.
-    mylcd.Fill_Round_Rectangle(22,180,88,202,6); //1.
-
-  }
-
-
+  
 
   //Quadrant 4 (Voltage, Cell voltage)
 
@@ -198,5 +224,5 @@ void loop()
   mylcd.Print_Number_Float(3.86, 2, 340, 260, '.', 2, ' '); //Cell 3
   mylcd.Print_Number_Float(3.85, 2, 340, 290, '.', 2, ' '); //Cell 4
 
-  delay(3000); //Aktualisierungsdelay
+  delay(1000); //Aktualisierungsdelay
 }
