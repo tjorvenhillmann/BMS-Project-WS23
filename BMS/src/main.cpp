@@ -75,7 +75,8 @@ const unsigned int BATTERY_SWITCH_PIN = 26;
 // **************************************************************
 
 // ********************* functions ******************************
-double readThermisterSE017();
+float adc2temp(int16_t adc);
+// double readThermisterSE017();
 void checkCurrent_withACS712();
 void checkVoltage();
 void checkTemp();
@@ -110,13 +111,23 @@ void setup() {
   pinMode(BATTERY_SWITCH_PIN, OUTPUT); 
 }
 
-float readThermisterSE017(int RawADC){
-  float lnR, Temp; 
-  lnR = log(((10240000/RawADC) - 10000)); 
-  Temp = 1/(0.001129148 + (0.000234125 + (0.0000000876741 * lnR * lnR )) * lnR);
-  Temp = -1*(Temp - 273.15 - temp_sens_offset); 
-  return Temp; 
+float adc2temp(int16_t adc){
+  float adc_f = (float)adc;
+  float x4 = pow(adc_f, 4) * -2.864e-09;
+  float x3 = pow(adc_f, 3) * 3.726e-06;
+  float x2 = pow(adc_f, 2) * -0.00142;
+  float x1 = adc_f * -0.01458;
+  float x0 = 97.45;
+  return x4 + x3 + x2 + x1 + x0;
 }
+
+// float readThermisterSE017(int RawADC){
+//  float lnR, Temp; 
+//  lnR = log(((10240000/RawADC) - 10000)); 
+//  Temp = 1/(0.001129148 + (0.000234125 + (0.0000000876741 * lnR * lnR )) * lnR);
+//  Temp = -1*(Temp - 273.15 - temp_sens_offset); 
+//  return Temp; 
+// }
 
 void checkCurrent_withACS712(){
   // read sensor
@@ -206,10 +217,10 @@ void checkTemperature(){
   int temp_4_sensValue = analogRead(TEMP_4_PIN);
  
  // calculate temperature with raw value 
-  temp_1 = readThermisterSE017(temp_1_sensValue); 
-  temp_2 = readThermisterSE017(temp_2_sensValue);
-  temp_3 = readThermisterSE017(temp_3_sensValue); 
-  temp_4 = readThermisterSE017(temp_4_sensValue);
+  temp_1 = adc2temp(temp_1_sensValue); 
+  temp_2 = adc2temp(temp_2_sensValue);
+  temp_3 = adc2temp(temp_3_sensValue); 
+  temp_4 = adc2temp(temp_4_sensValue);
 
   //check for every value
   float temp_C[] = {temp_1, temp_2, temp_3, temp_4}; 
@@ -294,13 +305,9 @@ void controlBalancing(){
   }
 }
 
-void setFaultCondition(){
+// void setFaultCondition(){}
 
-}
-
-void setSafeCondition(){
-
-}
+// void setSafeCondition(){}
 
 void battery_state(){
   unsigned long current_time = millis(); 
