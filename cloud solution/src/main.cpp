@@ -46,6 +46,7 @@ Point sensor("wifi_status");
 
 // Real data points
 Point bms_data("bms_status");
+Point bms_temps("bms_temps");
 
 struct Voltages
 {
@@ -169,10 +170,10 @@ void loop() {
   bms_data.addField("cell_V2", voltages.cell_V2);
   bms_data.addField("cell_V3", voltages.cell_V3);
   bms_data.addField("cell_V4", voltages.cell_V4);
-  bms_data.addField("Temp1", temps.temp1);
-  bms_data.addField("Temp2", temps.temp2);
-  bms_data.addField("Temp3", temps.temp3);
-  bms_data.addField("Temp4", temps.temp4);
+  bms_temps.addField("Temp1", temps.temp1);
+  bms_temps.addField("Temp2", temps.temp2);
+  bms_temps.addField("Temp3", temps.temp3);
+  bms_temps.addField("Temp4", temps.temp4);
 
   // Print what are we exactly writing
   Serial.print("Writing: ");
@@ -182,12 +183,16 @@ void loop() {
     Serial.println("Wifi connection lost");
   }
 
-  // Write point
+  // Write point 1
   if (!client.writePoint(bms_data)) {
     Serial.print("InfluxDB write failed: ");
     Serial.println(client.getLastErrorMessage());
   }
-
+  // Write point 2
+  if (!client.writePoint(bms_temps)) {
+    Serial.print("InfluxDB write failed: ");
+    Serial.println(client.getLastErrorMessage());
+  }
   //Wait 10s
   Serial.println("Wait 10s");
   delay(10000);
