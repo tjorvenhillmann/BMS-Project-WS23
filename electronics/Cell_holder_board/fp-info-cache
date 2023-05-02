@@ -1,4 +1,4 @@
-21511845150363105
+21513528205279912
 Audio_Module
 Reverb_BTDR-1H
 Digital Reverberation Unit, http://www.belton.co.kr/inc/downfile.php?seq=17&file=pdf (footprint from http://www.uk-electronic.de/PDF/BTDR-1.pdf)
@@ -32,8 +32,15 @@ CAN_Board
 
 
 0
+7
+7
+BMS_lib
+Fuse_Glass_5x20mm
+
+
 0
-0
+8
+2
 BMS_lib
 Prototyping_Pad_Current
 
