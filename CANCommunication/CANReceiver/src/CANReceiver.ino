@@ -14,7 +14,7 @@ byte hexmsg[2] = {0,0};
 float temp_list[4];
 float vol_list[4];
 float current_soc_soh_list[4];
-int balance_list[4];
+bool balance_list[4];
 
 
 
@@ -56,32 +56,35 @@ void getCANmessage(){
     }
     else if (canMsg.can_id == frame_id_3)
     {
-      for (int i = 0; i<canMsg.can_dlc; i+=2)  {  // print the data
       Serial.println("Current & SOH & SOC & CAPACITY: ");
-      hexmsg[1] = canMsg.data[i];
-      hexmsg[0] = canMsg.data[i+1];
-       current_soc_soh_list[i] = byte2float(hexmsg, 100);
-      Serial.println( current_soc_soh_list[i]);
+      for (int i = 0; i<canMsg.can_dlc; i+=2)  {  // print the data
+        hexmsg[1] = canMsg.data[i];
+        hexmsg[0] = canMsg.data[i+1];
+        current_soc_soh_list[i] = byte2float(hexmsg, 100);
+        Serial.println( current_soc_soh_list[i]);
       }      
     }
     else if (canMsg.can_id == frame_id_4)
     {
       for (int i = 0; i<canMsg.can_dlc; i+=1)  {  // print the data
       Serial.print("Balance Status: ");
-      Serial.println(balance_list[i], HEX);
+      if(canMsg.data[i] == 1){
+        balance_list[i] = true;
+      }
+      else if(canMsg.data[i] == 0){
+        balance_list[i] = false;
+      }
+      Serial.println(balance_list[i]);
       }      
     }
     
     delay(50);
   }
-
-
-
-
 }
+
+
 void loop() {
 
 getCANmessage();
-
 
 }
