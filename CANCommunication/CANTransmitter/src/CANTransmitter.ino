@@ -15,8 +15,12 @@ byte frame_id_4 = 0x004;
 int can_counter=0;
 float temp_list[] = {37.12, 20.20, 41.10,15.78}; // E80, 7E4, 100E, 62A
 float vol_list[] = {8.98, 10.12, 5.75, 7.89};   // 382, 3F4, 23F, 315
-float current_soc_soh[] = {};
-byte balance_list[] = {1,0,1,1};
+float current= 66.66;   // 1A0A   mAmp
+float soc = 85.89;      // 218D
+float soh = 75.70;      // 1D92
+float capacity;
+float current_soc_soh[] = {current, soc, soh,capacity};
+bool balance_list[] = {true,true,false,true};
 
 byte tmsg[2] = {0x00,0x00};
   // example temp convertion: 
@@ -77,8 +81,8 @@ void updateCANmessages(){
   can_counter = can_counter + 2;
   }
   can_counter=0; 
-  /*for(int i = 0; i < (canMsg3.can_dlc/2); i++){ // Current, SOC, SOH and Capacity
-  float2byte(temp_list[i],tmsg,resolution);
+  for(int i = 0; i < (canMsg3.can_dlc/2); i++){ // Current, SOC, SOH and Capacity
+  float2byte(current_soc_soh[i],tmsg,resolution);
   Serial.print(tmsg[1],HEX);
   Serial.println(tmsg[0],HEX);
   canMsg3.data[can_counter] = tmsg[1];   
@@ -86,9 +90,14 @@ void updateCANmessages(){
   can_counter = can_counter + 2;
   }
   can_counter=0; 
-  */
+  
   for(int i = 0; i<canMsg4.can_dlc; i++){ // Balance Status
-  canMsg4.data[i] = balance_list[i];   
+    if(balance_list[i] == false){
+      canMsg4.data[i] = 0;   
+    }
+    else if (balance_list[i] == true){
+      canMsg4.data[i] = 1;  
+    }
   }
 }
 
