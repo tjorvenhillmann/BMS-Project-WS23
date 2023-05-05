@@ -18,8 +18,7 @@ float vol_list[] = {8.98, 10.12, 5.75, 7.89};   // 382, 3F4, 23F, 315
 float current= 66.66;   // 1A0A   mAmp
 float soc = 85.89;      // 218D
 float soh = 75.70;      // 1D92
-float capacity;
-float current_soc_soh[] = {current, soc, soh,capacity};
+float current_soc_soh[] = {current, soc, soh};
 bool balance_list[] = {true,true,false,true};
 
 byte tmsg[2] = {0x00,0x00};
@@ -36,7 +35,7 @@ void setup() {
   canMsg2.can_dlc = 8;
 
   canMsg3.can_id  = frame_id_3;  // Current, SOC, SOH and Capacity ID: 003
-  canMsg3.can_dlc = 8;  
+  canMsg3.can_dlc = 6;  
   
   canMsg4.can_id  = frame_id_4;  //  Balance Status ID: 004
   canMsg4.can_dlc = 4;
