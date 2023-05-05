@@ -7,6 +7,7 @@ WiFiMulti wifiMulti;
 
 #include <InfluxDbClient.h>
 #include <InfluxDbCloud.h>
+//test Kommentar henry
 
 // WiFi AP SSID
 #define WIFI_SSID "Pixel7"
