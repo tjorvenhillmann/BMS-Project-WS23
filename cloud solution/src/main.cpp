@@ -172,10 +172,10 @@ void loop() {
   bms_data.addField("cell_V3", voltages.cell_V3);
   bms_data.addField("cell_V4", voltages.cell_V4);
   bms_data.addField("pack_voltage", voltages.pack_voltage);
-  bms_temps.addField("Temp1", temps.temp1);
-  bms_temps.addField("Temp2", temps.temp2);
-  bms_temps.addField("Temp3", temps.temp3);
-  bms_temps.addField("Temp4", temps.temp4);
+  bms_temps.addField("Temp_Cell1", temps.temp1);
+  bms_temps.addField("Temp_Cell2", temps.temp2);
+  bms_temps.addField("Temp_Cell3", temps.temp3);
+  bms_temps.addField("Temp_Cell4", temps.temp4);
 
   // Print what are we exactly writing
   Serial.print("Writing: ");
