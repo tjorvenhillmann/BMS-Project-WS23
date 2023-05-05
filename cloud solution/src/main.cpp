@@ -54,6 +54,7 @@ struct Voltages
   float cell_V2 = 0;
   float cell_V3 = 0;
   float cell_V4 = 0; 
+  float pack_voltage = 0;
 };
 
 struct Temps
@@ -166,10 +167,12 @@ void loop() {
   // Report RSSI of currently connected network
   set_random_voltages();
   set_random_temps();
+  voltages.pack_voltage = voltages.cell_V1 + voltages.cell_V2 + voltages.cell_V3 + voltages.cell_V4;
   bms_data.addField("cell_V1", voltages.cell_V1);
   bms_data.addField("cell_V2", voltages.cell_V2);
   bms_data.addField("cell_V3", voltages.cell_V3);
   bms_data.addField("cell_V4", voltages.cell_V4);
+  bms_data.addField("pack_voltage", voltages.pack_voltage);
   bms_temps.addField("Temp1", temps.temp1);
   bms_temps.addField("Temp2", temps.temp2);
   bms_temps.addField("Temp3", temps.temp3);
