@@ -1,5 +1,6 @@
 #include <SPI.h>
 #include <mcp2515.h>
+#include <Arduino.h>
 
 float temp_1 = 0;
 float temp_2 = 0;
