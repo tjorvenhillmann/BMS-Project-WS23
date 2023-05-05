@@ -2,21 +2,23 @@
 #include <math.h>
 
 // ********************** global definitions **********************
-// bool safe = false; 
+bool error = true; 
 unsigned long prev_time = 0; 
 float prev_voltage = 0; 
 float soc = 0; // values from 0 to 100
 float soh = 0; 
 float rul = 0; 
-int balThreshold = 30; // threshold for balancing [mV]
-int stopBalThreshold = 5; // threshold for stopping [mV]
+float balThreshold = 0.030; // threshold for balancing [V]
+float stopBalThreshold = 0.005; // threshold for stopping [V]
+bool charging = false; // indicates charging status: charging = true, discharging = false
+bool old_status = false; 
+unsigned long charging_timer_offset = 0; 
+unsigned long lastMeasurement = 0; 
+unsigned long measurementInterval = 5; 
 
 // calibration data 
-int v_ref = 5000; // reference voltage in mV
-double temp_sens_offset = 12; // offset for temp_sensor [C]
-
-// battery parameters
-float nom_capacity = 1000; 
+float v_ref = 5.0; // reference voltage in V
+// double temp_sens_offset = 12; // offset for temp_sensor [C]
 
 // status indications 
 bool current_fault = false; 
@@ -30,11 +32,11 @@ float temp_1 = 0;
 float temp_2 = 0; 
 float temp_3 = 0; 
 float temp_4 = 0; 
-int cell_1_V = 0; 
-int cell_2_V = 0; 
-int cell_3_V = 0; 
-int cell_4_V = 0; 
-int current = 0; 
+float cell_1_V = 0; 
+float cell_2_V = 0; 
+float cell_3_V = 0; 
+float cell_4_V = 0; 
+float current = 0; 
 
 // output data 
 bool balance_status_1 = false; 
@@ -44,12 +46,22 @@ bool balance_status_4 = false;
 bool battery_switch = false;
 
 // safety limits (read-only)
-const float cutoff_temp_upper_limit = 60; // [°C]
-const float cutoff_temp_lower_limit = -20; // [°C]
-const int cutoff_voltage_lower_limit = 3200; // [mV]
-const int cutoff_voltage_upper_limit = 4200; // [mV]
-const int positive_cutoff_current = 30000; // current maximum 30A [mA] 
-const int negative_cutoff_current = -30000; // negative current maximum -30A [mA] 
+const float cutoff_temp_upper_limit_charging = 45.0; // [°C]
+const float cutoff_temp_lower_limit_charging = 0; // [°C]
+const float cutoff_temp_upper_limit_discharging = 60.0; // [°C]
+const float cutoff_temp_lower_limit_discharging = -20.0; // [°C]
+const float cutoff_voltage_lower_limit = 2.5; // [V]
+const float cutoff_voltage_upper_limit = 4.2; // [V]
+const float nom_voltage = 3.6; // [V]
+const float nom_capacity = 1500.0; // [mAh]
+const float stopChargingCurrent = 0.1; // [A]
+const float charging_cutoff_current = 0.75; // current maximum [A] 
+const float discharging_cutoff_current = -18.0; // negative current maximum [A] 
+const long charge_time = 150.0*60.0; // maximum charging time [s]
+
+// global variables for limits
+float cutoff_temp_upper_limit = cutoff_temp_upper_limit_discharging; 
+float cutoff_temp_lower_limit = cutoff_temp_lower_limit_discharging; 
 
 // pin definition (read-only)
 // analouge
@@ -81,9 +93,8 @@ void checkCurrent_withACS712();
 void checkVoltage();
 void checkTemp();
 void controlBalancing(); 
-// void setFaultCondition();
-// void setSafeCondition();
 void battery_state();
+void adjust_temp_limits();
 
 // **************************************************************
 
@@ -134,34 +145,18 @@ void checkCurrent_withACS712(){
   int offset = 2500; // [mV], 0A at 2.5V
   int sensValue = analogRead(CURRENT_PIN); // read sensor value range 0-1024
   double sensVoltage = (sensValue/1024)*v_ref; // calculate voltage in mV
-  double mAmp = ((sensVoltage - offset)/66.0)*1000.0; // [mA], sensor measures 66 mV/A
+  float Amp = ((sensVoltage - offset)/66.0); // [A], sensor measures 66 mV/A
   
-  current = mAmp; // [mA] convert double to int -> Rundet nicht richtig!!
+  current = Amp; // [A]
 
  // check current limits 
-  if(current >= positive_cutoff_current){
-    battery_switch = false; 
+  if(current >= charging_cutoff_current){
     current_fault = true;
-  }else if(current <= negative_cutoff_current){
-    battery_switch = false; 
+  }else if(current <= discharging_cutoff_current){
     current_fault = true; 
   }else{
     current_fault = false;
   }
-
-  /*
-  // Display
-  Serial.print("sensor value = ");
-  Serial.print(sensValue);
-  Serial.print("\t sensor voltage in mV = ");
-  Serial.print(sensVoltage);
-  Serial.print("\t mAmp = ");
-  Serial.print(mAmp); 
-  Serial.print("\t current in mA = ");
-  Serial.print(current); 
-  Serial.print("\n");
-  */
- 
 }
 
 void checkVoltage(){
@@ -182,7 +177,7 @@ void checkVoltage(){
 
  
   //check for every value
-  int cell_V[] = {cell_1_V, cell_2_V, cell_3_V, cell_4_V}; 
+  float cell_V[] = {cell_1_V, cell_2_V, cell_3_V, cell_4_V}; 
   int j = sizeof(cell_V)/sizeof(cell_V[0]);
 
   for(i=0; i<j; i++){ 
@@ -200,14 +195,14 @@ void checkVoltage(){
       voltage_status[i] = 0; 
     }else if(cell_V[i] <= cutoff_voltage_lower_limit){ // low voltage
       voltage_fault[i] = -1; 
-      voltage_status[i] = 0; 
+      voltage_status[i] = 0;  
     }else{
       voltage_fault[i] = 0; 
     }
   }
 }
 
-void checkTemperature(){
+void checkTemp(){
   int i = 0; 
   // 4 temperature sensors, each value 2 byte
   // read sensors
@@ -225,31 +220,15 @@ void checkTemperature(){
   //check for every value
   float temp_C[] = {temp_1, temp_2, temp_3, temp_4}; 
   for(i=0; i < (sizeof(temp_C)/sizeof(temp_C[0])); i++){ 
-    //high temperature
-    if(temp_C[i] >= cutoff_temp_upper_limit){ 
-      // DISCONNECT !!! 
-      battery_switch = false; 
+    if(temp_C[i] >= cutoff_temp_upper_limit){  //high temperature
       temp_fault = 1; 
     }else if(temp_C[i] <= cutoff_temp_lower_limit){ //low temperature
-      // DISCONNECT !!!
-      battery_switch = false; 
       temp_fault = -1; 
     }else{
       temp_fault = 0; 
     }
   } 
 
-  /*
-  // Display
-  Serial.print("temp 1 value = ");
-  Serial.print(temp_1);
-  Serial.print("\t temp 2 value = ");
-  Serial.print(temp_2);
-  Serial.print("\t temp 3 value = ");
-  Serial.print(temp_3);
-  Serial.print("\t temp 4 value = ");
-  Serial.print(temp_4);
-  */
 }
 
 void controlBalancing(){
@@ -257,11 +236,11 @@ void controlBalancing(){
   int cell_V[] = {cell_1_V, cell_2_V, cell_3_V, cell_4_V}; 
   int j = sizeof(cell_V)/sizeof(cell_V[0]);
   bool balance_status[4] = {balance_status_1, balance_status_2, balance_status_3, balance_status_4};
-  int maxVol = cell_V[0]; // [mV]
-  int minVol = cell_V[0]; // [mV]
+  float maxVol = cell_V[0]; // [V]
+  float minVol = cell_V[0]; // [V]
   int maxVol_index = 1; 
   int minVol_index = 1; 
-  int volDiff = 0; 
+  float volDiff = 0; 
 
   // find maximum voltage 
   for(i=0; i<j; i++){
@@ -298,29 +277,25 @@ void controlBalancing(){
     if(voltage_status[i] = 1){ // voltage on upper limit -> enable 
       balance_status[i] = true; 
     }
-
+  
     if(voltage_status[i] = -1){ // voltage on lower limit -> disable
       balance_status[i] = false; 
     }
   }
 }
 
-// void setFaultCondition(){}
-
-// void setSafeCondition(){}
-
 void battery_state(){
   unsigned long current_time = millis(); 
   float elapsed_time = (current_time-prev_time)/1000.0; 
-  float charge_change = (current/1000.0) * elapsed_time/3600.0; // [As]
-  float medium_vol = ((cell_1_V+cell_2_V+cell_3_V+cell_4_V)/4.0); // [mV]
+  float charge_change = current * elapsed_time/3600.0; // [As]
+  float medium_vol = ((cell_1_V+cell_2_V+cell_3_V+cell_4_V)/4.0); // [V]
 
   // SOC
   float new_soc = soc - 100 * charge_change/(nom_capacity/1000.0); 
   soc = max(0.0, min(100.0, new_soc)); 
 
   // SOH 
-  float new_soh = 100 * (medium_vol/cutoff_voltage_upper_limit)/1000.0 * (soc/100); 
+  float new_soh = 100 * (medium_vol/cutoff_voltage_upper_limit) * (soc/100); 
   soh = max(0.0, min(100.0, new_soh)); 
 
   // RUL
@@ -331,18 +306,55 @@ void battery_state(){
   prev_voltage = medium_vol;
 }
 
+void adjust_temp_limits(){
+  // change temperature limtis depending on charging/discharging 
+  if(charging == true){
+    cutoff_temp_upper_limit = cutoff_temp_upper_limit_charging;
+    cutoff_temp_lower_limit = cutoff_temp_lower_limit_charging;
+  }else{
+    cutoff_temp_upper_limit = cutoff_temp_upper_limit_discharging;
+    cutoff_temp_lower_limit = cutoff_temp_lower_limit_discharging;
+  }
+}
 
 void loop() {
+
+  while((millis()-lastMeasurement) < measurementInterval){
+    // delay - do nothing 
+  }
+  lastMeasurement = millis();
+
   checkCurrent_withACS712();
   checkVoltage();
   checkTemp();
   controlBalancing();
   battery_state();
 
-  /* // safety
-  if(safe==1){
-    setSafeCondition();
+  // charging control 
+  old_status = charging; 
+  if(current > 0){
+    charging = true;
+    if(old_status == false){
+      charging_timer_offset = millis();
+    }
   }else{
-    setFaultCondition();
-  } */
+    charging = false;
+  }
+  adjust_temp_limits(); 
+  // disconnect battery after charging
+  if(charging){
+    if(millis() > charging_timer_offset + charge_time){ // timeout
+      battery_switch = false; 
+    }else if(current < stopChargingCurrent){ // charging current 
+      battery_switch = false; 
+    }
+  }
+
+  // error report
+  if(current_fault || voltage_fault[0] != 0 || voltage_fault[1] != 0 || voltage_fault[2] != 0 || voltage_fault[3] != 0 || temp_fault != 0){
+    error = true;
+    battery_switch = false;
+  }else{
+    error = false; 
+  }
 }
