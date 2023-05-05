@@ -2,7 +2,7 @@
 #include <math.h>
 
 // ********************** global definitions **********************
-// bool safe = false; 
+bool error = true; 
 unsigned long prev_time = 0; 
 float prev_voltage = 0; 
 float soc = 0; // values from 0 to 100
@@ -13,6 +13,8 @@ float stopBalThreshold = 0.005; // threshold for stopping [V]
 bool charging = false; // indicates charging status: charging = true, discharging = false
 bool old_status = false; 
 unsigned long charging_timer_offset = 0; 
+unsigned long lastMeasurement = 0; 
+unsigned long measurementInterval = 5; 
 
 // calibration data 
 float v_ref = 5.0; // reference voltage in V
@@ -149,10 +151,8 @@ void checkCurrent_withACS712(){
 
  // check current limits 
   if(current >= charging_cutoff_current){
-    battery_switch = false; 
     current_fault = true;
   }else if(current <= discharging_cutoff_current){
-    battery_switch = false; 
     current_fault = true; 
   }else{
     current_fault = false;
@@ -195,7 +195,7 @@ void checkVoltage(){
       voltage_status[i] = 0; 
     }else if(cell_V[i] <= cutoff_voltage_lower_limit){ // low voltage
       voltage_fault[i] = -1; 
-      voltage_status[i] = 0; 
+      voltage_status[i] = 0;  
     }else{
       voltage_fault[i] = 0; 
     }
@@ -220,14 +220,9 @@ void checkTemp(){
   //check for every value
   float temp_C[] = {temp_1, temp_2, temp_3, temp_4}; 
   for(i=0; i < (sizeof(temp_C)/sizeof(temp_C[0])); i++){ 
-    //high temperature
-    if(temp_C[i] >= cutoff_temp_upper_limit){ 
-      // DISCONNECT !!! 
-      battery_switch = false; 
+    if(temp_C[i] >= cutoff_temp_upper_limit){  //high temperature
       temp_fault = 1; 
     }else if(temp_C[i] <= cutoff_temp_lower_limit){ //low temperature
-      // DISCONNECT !!!
-      battery_switch = false; 
       temp_fault = -1; 
     }else{
       temp_fault = 0; 
@@ -282,7 +277,7 @@ void controlBalancing(){
     if(voltage_status[i] = 1){ // voltage on upper limit -> enable 
       balance_status[i] = true; 
     }
-
+  
     if(voltage_status[i] = -1){ // voltage on lower limit -> disable
       balance_status[i] = false; 
     }
@@ -292,15 +287,15 @@ void controlBalancing(){
 void battery_state(){
   unsigned long current_time = millis(); 
   float elapsed_time = (current_time-prev_time)/1000.0; 
-  float charge_change = (current/1000.0) * elapsed_time/3600.0; // [As]
-  float medium_vol = ((cell_1_V+cell_2_V+cell_3_V+cell_4_V)/4.0); // [mV]
+  float charge_change = current * elapsed_time/3600.0; // [As]
+  float medium_vol = ((cell_1_V+cell_2_V+cell_3_V+cell_4_V)/4.0); // [V]
 
   // SOC
   float new_soc = soc - 100 * charge_change/(nom_capacity/1000.0); 
   soc = max(0.0, min(100.0, new_soc)); 
 
   // SOH 
-  float new_soh = 100 * (medium_vol/cutoff_voltage_upper_limit)/1000.0 * (soc/100); 
+  float new_soh = 100 * (medium_vol/cutoff_voltage_upper_limit) * (soc/100); 
   soh = max(0.0, min(100.0, new_soh)); 
 
   // RUL
@@ -324,12 +319,18 @@ void adjust_temp_limits(){
 
 void loop() {
 
+  while((millis()-lastMeasurement) < measurementInterval){
+    // delay - do nothing 
+  }
+  lastMeasurement = millis();
+
   checkCurrent_withACS712();
   checkVoltage();
   checkTemp();
   controlBalancing();
   battery_state();
 
+  // charging control 
   old_status = charging; 
   if(current > 0){
     charging = true;
@@ -339,9 +340,7 @@ void loop() {
   }else{
     charging = false;
   }
-
   adjust_temp_limits(); 
-
   // disconnect battery after charging
   if(charging){
     if(millis() > charging_timer_offset + charge_time){ // timeout
@@ -351,4 +350,11 @@ void loop() {
     }
   }
 
+  // error report
+  if(current_fault || voltage_fault[0] != 0 || voltage_fault[1] != 0 || voltage_fault[2] != 0 || voltage_fault[3] != 0 || temp_fault != 0){
+    error = true;
+    battery_switch = false;
+  }else{
+    error = false; 
+  }
 }
