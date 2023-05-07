@@ -532,7 +532,7 @@
     (property "Reference" "J2" (at 36.83 34.29 0)
       (effects (font (size 1.27 1.27)))
     )
-    (property "Value" "Load_connector" (at 34.29 40.64 90)
+    (property "Value" "aux_I" (at 34.29 40.64 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Footprint" "TerminalBlock:TerminalBlock_bornier-2_P5.08mm" (at 36.83 41.91 0)
