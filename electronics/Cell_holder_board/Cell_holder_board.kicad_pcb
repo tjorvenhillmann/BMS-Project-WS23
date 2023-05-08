@@ -3568,7 +3568,7 @@
 
   (footprint "BMS_lib:thi_logo_large" (layer "B.Cu")
     (tstamp 5e67470c-f1f5-4ffd-8731-028dcf28dd95)
-    (at 101.6 103.5 180)
+    (at 113.8 103.3 180)
     (attr through_hole)
     (fp_text reference "G***" (at 0 0) (layer "B.SilkS") hide
         (effects (font (size 1.524 1.524) (thickness 0.3)) (justify mirror))
@@ -3891,7 +3891,10 @@
 
   (gr_rect (start 51 59) (end 152 160)
     (stroke (width 0.1) (type default)) (fill none) (layer "Edge.Cuts") (tstamp d8f3373b-5e4a-4bf6-9a86-8b371c6facc5))
-  (gr_text "Cell_holder_board\nBMS_Project_SS_2023" (at 60.1 66.4) (layer "F.SilkS") (tstamp 41198d51-930d-4403-afa2-3017041a8b74)
+  (gr_text "Tjorven Hillmann\nWilken Hemme\nHenry Pasch\nMichael Witti\nJonathan Böke\nFabian Mast\nGina-Madeleine Haase\nA. Furkan Can\nRamón Fürst" (at 93 120.7) (layer "B.SilkS") (tstamp 22ad1fe8-0e16-45ba-a46b-77b4dc967923)
+    (effects (font (size 2 2) (thickness 0.3)) (justify left bottom mirror))
+  )
+  (gr_text "Cell holder board\nBMS Project SS23" (at 60.1 66.4) (layer "F.SilkS") (tstamp 41198d51-930d-4403-afa2-3017041a8b74)
     (effects (font (size 2 2) (thickness 0.3)) (justify left bottom))
   )
   (gr_text "v GND v" (at 140.57 150.62 90) (layer "F.SilkS") (tstamp 4d53744e-d8d6-471f-9c0e-b487db73f69e)
