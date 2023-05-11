@@ -2,6 +2,7 @@
 #include <math.h>
 
 // ********************** global definitions **********************
+bool startingup = true;
 bool error = true; 
 unsigned long prev_time = 0; 
 float prev_voltage = 0; 
@@ -95,6 +96,7 @@ void checkCurrent_withACS712();
 void checkVoltage();
 void checkTemp();
 void controlBalancing(); 
+void calculateStartSOC();
 void battery_state();
 void adjust_temp_limits();
 void connectBattery();
@@ -287,6 +289,19 @@ void controlBalancing(){
   }
 }
 
+void calculateStartSOC(){
+  float medium_vol = ((cell_1_V+cell_2_V+cell_3_V+cell_4_V)/4.0); // [V]
+  soc = (medium_vol-cutoff_temp_lower_limit)/(cutoff_voltage_upper_limit-cutoff_voltage_lower_limit)*100.0;
+
+  if(soc > 100.0){
+    soc = 100; 
+  }
+
+  if(soc < 0){
+    soc = 0; 
+  }
+}
+
 void battery_state(){
   unsigned long current_time = millis(); 
   float elapsed_time = (current_time-prev_time)/1000.0; 
@@ -341,6 +356,11 @@ void loop() {
   controlBalancing();
   battery_state();
 
+  // measure start-soc -> performed only in first loop
+  if(startingup){
+    calculateStartSOC();
+  }
+
   // charging control 
   old_status = charging; 
   if(current > 0){
@@ -369,4 +389,6 @@ void loop() {
   }else{
     error = false; 
   }
+
+  startingup = false;
 }
