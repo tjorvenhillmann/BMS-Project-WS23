@@ -56,7 +56,7 @@ void getCANmessage(){
     }
     else if (canMsg.can_id == frame_id_3)
     {
-      Serial.println("Current & SOH & SOC & CAPACITY: ");
+      Serial.println("Current & SOH & SOC: ");
       for (int i = 0; i<canMsg.can_dlc; i+=2)  {  // print the data
         hexmsg[1] = canMsg.data[i];
         hexmsg[0] = canMsg.data[i+1];
