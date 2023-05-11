@@ -13,8 +13,10 @@ float stopBalThreshold = 0.005; // threshold for stopping [V]
 bool charging = false; // indicates charging status: charging = true, discharging = false
 bool old_status = false; 
 unsigned long charging_timer_offset = 0; 
+
+// parameters for loop delay
 unsigned long lastMeasurement = 0; 
-unsigned long measurementInterval = 5; 
+unsigned long measurementInterval = 5; // measure every 5 seconds
 
 // calibration data 
 float v_ref = 5.0; // reference voltage in V
@@ -57,7 +59,7 @@ const float nom_capacity = 1500.0; // [mAh]
 const float stopChargingCurrent = 0.1; // [A]
 const float charging_cutoff_current = 0.75; // current maximum [A] 
 const float discharging_cutoff_current = -18.0; // negative current maximum [A] 
-const long charge_time = 150.0*60.0; // maximum charging time [s]
+const long charge_time = 150.0*60.0*1000.0; // maximum charging time [ms]
 
 // global variables for limits
 float cutoff_temp_upper_limit = cutoff_temp_upper_limit_discharging; 
@@ -95,6 +97,7 @@ void checkTemp();
 void controlBalancing(); 
 void battery_state();
 void adjust_temp_limits();
+void connectBattery();
 
 // **************************************************************
 
@@ -203,7 +206,7 @@ void checkVoltage(){
 }
 
 void checkTemp(){
-  int i = 0; 
+  unsigned int i = 0; 
   // 4 temperature sensors, each value 2 byte
   // read sensors
   int temp_1_sensValue = analogRead(TEMP_1_PIN); 
@@ -233,7 +236,7 @@ void checkTemp(){
 
 void controlBalancing(){
   int i = 0; 
-  int cell_V[] = {cell_1_V, cell_2_V, cell_3_V, cell_4_V}; 
+  float cell_V[] = {cell_1_V, cell_2_V, cell_3_V, cell_4_V}; 
   int j = sizeof(cell_V)/sizeof(cell_V[0]);
   bool balance_status[4] = {balance_status_1, balance_status_2, balance_status_3, balance_status_4};
   float maxVol = cell_V[0]; // [V]
@@ -274,11 +277,11 @@ void controlBalancing(){
 
   // Balancing control based on cell voltages 
   for(i=0; i<j; i++){
-    if(voltage_status[i] = 1){ // voltage on upper limit -> enable 
+    if(voltage_status[i] == 1){ // voltage on upper limit -> enable 
       balance_status[i] = true; 
     }
   
-    if(voltage_status[i] = -1){ // voltage on lower limit -> disable
+    if(voltage_status[i] == -1){ // voltage on lower limit -> disable
       balance_status[i] = false; 
     }
   }
@@ -317,6 +320,14 @@ void adjust_temp_limits(){
   }
 }
 
+void connectBattery(){ // to ensure, that only connects when safe
+  if(error){
+    battery_switch = false; 
+  }else{
+    battery_switch = true; 
+  }
+}
+
 void loop() {
 
   while((millis()-lastMeasurement) < measurementInterval){
@@ -334,14 +345,14 @@ void loop() {
   old_status = charging; 
   if(current > 0){
     charging = true;
-    if(old_status == false){
+    if(old_status == false){ // wasn't charging before -> just started, set offset for timer
       charging_timer_offset = millis();
     }
   }else{
     charging = false;
   }
   adjust_temp_limits(); 
-  // disconnect battery after charging
+  // disconnect battery from charging
   if(charging){
     if(millis() > charging_timer_offset + charge_time){ // timeout
       battery_switch = false; 
@@ -351,7 +362,8 @@ void loop() {
   }
 
   // error report
-  if(current_fault || voltage_fault[0] != 0 || voltage_fault[1] != 0 || voltage_fault[2] != 0 || voltage_fault[3] != 0 || temp_fault != 0){
+  if(current_fault || voltage_fault[0] != 0 || voltage_fault[1] != 0
+                    || voltage_fault[2] != 0 || voltage_fault[3] != 0 || temp_fault != 0){
     error = true;
     battery_switch = false;
   }else{
