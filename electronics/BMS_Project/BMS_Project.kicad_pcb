@@ -2658,7 +2658,7 @@
         (effects (font (size 1 1) (thickness 0.15)))
       (tstamp dd472f69-d589-4ade-858d-24068bbf2ca0)
     )
-    (fp_text value "10u?" (at 0 1.68 90) (layer "F.Fab")
+    (fp_text value "10u" (at 0 1.68 90) (layer "F.Fab")
         (effects (font (size 1 1) (thickness 0.15)))
       (tstamp 0aec2a2e-57cc-4d09-a8c1-1206bcf3a2ee)
     )
@@ -3068,11 +3068,11 @@
     (attr through_hole)
     (fp_text reference "G***" (at 0 0) (layer "B.SilkS") hide
         (effects (font (size 1.524 1.524) (thickness 0.3)) (justify mirror))
-      (tstamp 8d5e00c1-3587-4c08-9d65-9f0445abb570)
+      (tstamp dbf7eea0-9dd1-4c54-ac40-87baad31b3c2)
     )
     (fp_text value "LOGO" (at 0.75 0) (layer "B.SilkS") hide
         (effects (font (size 1.524 1.524) (thickness 0.3)) (justify mirror))
-      (tstamp 91a23314-b3ab-4136-ae22-b59d6d113b5e)
+      (tstamp 0ae4b274-4fa2-4492-923b-7645b9e2756b)
     )
     (fp_poly
       (pts
@@ -3117,7 +3117,7 @@
         (xy 9.933638 7.573104)
       )
 
-      (stroke (width 0.01) (type solid)) (fill solid) (layer "B.SilkS") (tstamp 096afb80-9e9b-41e4-9093-01d161a1bcb9))
+      (stroke (width 0.01) (type solid)) (fill solid) (layer "B.SilkS") (tstamp 87e7cf16-af5f-4240-a2da-fba349c392d2))
     (fp_poly
       (pts
         (xy -2.304276 10.613503)
@@ -3382,7 +3382,7 @@
         (xy -2.304276 10.613503)
       )
 
-      (stroke (width 0.01) (type solid)) (fill solid) (layer "B.SilkS") (tstamp c3608544-1c5d-4a10-971d-7620f489b29e))
+      (stroke (width 0.01) (type solid)) (fill solid) (layer "B.SilkS") (tstamp 7ca5e5d9-b0a2-40b4-80f6-9cd112878593))
   )
 
   (footprint "PCM_arduino-library:Arduino_Mega2560_Shield" (layer "B.Cu")
@@ -3499,7 +3499,7 @@
       (stroke (width 0.15) (type solid)) (layer "F.CrtYd") (tstamp 0c424627-809a-4577-a176-7c7f115b6d9d))
     (fp_arc (start 94.488 -0.254) (mid 96.52 -0.914237) (end 98.552 -0.254)
       (stroke (width 0.15) (type solid)) (layer "F.CrtYd") (tstamp 22fe824a-e9b0-4027-a47e-52a46bb3b0df))
-    (fp_arc (start 99.314 0.508) (mid 99.650926 1.077973) (end 99.8728 1.7018)
+    (fp_arc (start 99.314 0.508) (mid 99.650928 1.077972) (end 99.8728 1.7018)
       (stroke (width 0.15) (type solid)) (layer "F.CrtYd") (tstamp 306ee232-003a-425c-bcfd-7f9a53593525))
     (fp_circle (center 13.97 2.54) (end 17.17 2.54)
       (stroke (width 0.15) (type solid)) (fill none) (layer "B.Fab") (tstamp 6e70e3a1-a386-4588-ae53-bfbfd20f4b4e))

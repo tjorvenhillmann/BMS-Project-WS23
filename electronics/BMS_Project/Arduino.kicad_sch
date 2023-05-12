@@ -1371,7 +1371,7 @@
     (property "Reference" "C1" (at 66.04 97.155 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Value" "10u?" (at 66.04 99.695 0)
+    (property "Value" "10u" (at 66.04 99.695 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Footprint" "Capacitor_SMD:C_0805_2012Metric" (at 63.1952 101.6 0)
