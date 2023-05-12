@@ -17,7 +17,7 @@ unsigned long charging_timer_offset = 0;
 
 // parameters for loop delay
 unsigned long lastMeasurement = 0; 
-unsigned long measurementInterval = 5; // measure every 5 seconds
+const unsigned long measurementInterval = 5; // measure every 5 seconds
 
 // calibration data 
 float v_ref = 5.0; // reference voltage in V
@@ -87,6 +87,12 @@ const unsigned int BALANCE_STATUS_3_PIN = 24;
 const unsigned int BALANCE_STATUS_4_PIN = 25; 
 const unsigned int BATTERY_SWITCH_PIN = 26; 
 
+// switches (currently unused)
+const unsigned int SWITCH_0 = 30; 
+const unsigned int SWITCH_1 = 32; 
+const unsigned int SWITCH_2 = 34; 
+const unsigned int SWITCH_3 = 36; 
+
 // **************************************************************
 
 // ********************* functions ******************************
@@ -125,6 +131,11 @@ void setup() {
   pinMode(BALANCE_STATUS_3_PIN, OUTPUT);
   pinMode(BALANCE_STATUS_4_PIN, OUTPUT);
   pinMode(BATTERY_SWITCH_PIN, OUTPUT); 
+  // switches  
+  pinMode(SWITCH_0, OUTPUT); 
+  pinMode(SWITCH_1, OUTPUT); 
+  pinMode(SWITCH_2, OUTPUT); 
+  pinMode(SWITCH_3, OUTPUT); 
 }
 
 float adc2temp(int16_t adc){
