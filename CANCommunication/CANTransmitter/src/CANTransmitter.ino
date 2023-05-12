@@ -103,10 +103,9 @@ void updateCANmessages(){
 void sendCANmessages(){
   mcp2515.sendMessage(&canMsg1);  // CAN Message for Temperatures
   mcp2515.sendMessage(&canMsg2);  // CAN Message for Voltages
-  delay(100);
   mcp2515.sendMessage(&canMsg3);
   mcp2515.sendMessage(&canMsg4);
-  delay(100);
+  //delay(100);
 }
 
 void loop() {
