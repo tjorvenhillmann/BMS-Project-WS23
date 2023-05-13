@@ -1,5 +1,6 @@
-#include <SPI.h>
 #include <mcp2515.h>
+#include <Arduino.h>
+#include <SPI.h>
 
 float temp_1 = 37.12;
 float temp_2 = 27.12;
@@ -32,28 +33,9 @@ struct can_frame canMsg4;
 
 MCP2515 mcp2515(10);
 
-
-void setup() {
- 
-  while (!Serial);
-  Serial.begin(115200);
-  mcp2515.reset();
-  mcp2515.setBitrate(CAN_125KBPS);
-  mcp2515.setNormalMode();
-  //Serial.println("Example: Write to CAN");
-}
-
-void loop() {
-  construct_canmsg_1();
-  construct_canmsg_2();
-  construct_canmsg_3();
-  construct_canmsg_4();
-  mcp2515.sendMessage(&canMsg1);
-  mcp2515.sendMessage(&canMsg2);
-  mcp2515.sendMessage(&canMsg3);
-  mcp2515.sendMessage(&canMsg4);
-  Serial.println("Messages sent");
-  delay(500);
+void float2byte(float x, byte *var, int resolution){
+  *var = (int)(x*resolution) & 0xff;
+  *(var+1) = (int)(x*resolution) >> 8 & 0xff;
 }
 
 void construct_canmsg_1(){
@@ -73,6 +55,7 @@ void construct_canmsg_1(){
   canMsg1.data[6] = msg[0];
   canMsg1.data[7] = msg[1];
 }
+
 void construct_canmsg_2(){
   byte msg[2] = {0,0};
   canMsg2.can_id  = 0x002;
@@ -90,6 +73,7 @@ void construct_canmsg_2(){
   canMsg2.data[6] = msg[0];
   canMsg2.data[7] = msg[1];
 }
+
 void construct_canmsg_3(){
   byte msg[2] = {0,0};
   canMsg3.can_id  = 0x003;
@@ -107,18 +91,42 @@ void construct_canmsg_3(){
   canMsg3.data[6] = msg[0];
   canMsg3.data[7] = msg[1];
 }
+
 void construct_canmsg_4(){
   byte msg[2] = {0,0};
   canMsg4.can_id  = 0x004;
   canMsg4.can_dlc = 1;
-  balancer_status = balanc_status_cell_1 >> 0xff;
+  balancer_status = balanc_status_cell_1;
   balancer_status = balanc_status_cell_2 >> 1 & 0xff;
   balancer_status = balanc_status_cell_3 >> 2 & 0xff;
   balancer_status = balanc_status_cell_4 >> 3 & 0xff;
   balancer_status = cloud_status >> 4 & 0xFF;
   canMsg4.data[0] = balancer_status;
 }
-void float2byte(float x, byte *var, int resolution){
-  *var = (int)(x*resolution) & 0xff;
-  *(var+1) = (int)(x*resolution) >> 8 & 0xff;
+
+void setup() {
+ 
+  while (!Serial);
+  Serial.begin(115200);
+  mcp2515.reset();
+  mcp2515.setBitrate(CAN_125KBPS);
+  mcp2515.setNormalMode();
+  //Serial.println("Example: Write to CAN");
+}
+
+void loop() {
+  construct_canmsg_1();
+  construct_canmsg_2();
+  construct_canmsg_3();
+  construct_canmsg_4();
+  mcp2515.sendMessage(&canMsg1);
+  delay(125);
+  mcp2515.sendMessage(&canMsg2);
+  delay(125);
+  mcp2515.sendMessage(&canMsg3);
+  delay(125);
+  mcp2515.sendMessage(&canMsg4);
+  delay(125);
+  Serial.println("Messages sent");
+  delay(4500);
 }
