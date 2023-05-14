@@ -9,15 +9,15 @@ float prev_voltage = 0;
 float soc = 0; // values from 0 to 100
 float soh = 0; 
 float rul = 0; 
-float balThreshold = 0.030; // threshold for balancing [V]
-float stopBalThreshold = 0.005; // threshold for stopping [V]
+const float balThreshold = 0.030; // threshold for balancing [V]
+const float stopBalThreshold = 0.005; // threshold for stopping [V]
 bool charging = false; // indicates charging status: charging = true, discharging = false
 bool old_status = false; 
 unsigned long charging_timer_offset = 0; 
 
 // parameters for loop delay
 unsigned long lastMeasurement = 0; 
-const unsigned long measurementInterval = 5; // measure every 5 seconds
+const unsigned long measurementInterval = 5e3; // measure every 5 seconds
 
 // calibration data 
 float v_ref = 5.0; // reference voltage in V
@@ -113,6 +113,7 @@ void connectBattery();
 void setup() {
   // put your setup code here, to run once: 
   // Pin configuration
+  Serial.begin(9600); 
   // Analouge pins A0-A3 for temperature sensors
   pinMode(TEMP_1_PIN, INPUT); 
   pinMode(TEMP_2_PIN, INPUT); 
@@ -158,10 +159,10 @@ float adc2temp(int16_t adc){
 
 void checkCurrent_withACS712(){
   // read sensor
-  int offset = 2500; // [mV], 0A at 2.5V
+  float offset = 2.500; // [V], 0A at 2.5V
   int sensValue = analogRead(CURRENT_PIN); // read sensor value range 0-1024
-  double sensVoltage = (sensValue/1024)*v_ref; // calculate voltage in mV
-  float Amp = ((sensVoltage - offset)/66.0); // [A], sensor measures 66 mV/A
+  double sensVoltage = (sensValue/1024.0)*v_ref; // calculate voltage in V
+  float Amp = ((sensVoltage - offset)/0.066); // [A], sensor measures 66 mV/A
   
   current = Amp; // [A]
 
@@ -277,9 +278,15 @@ void controlBalancing(){
   // Balancing control based on cell voltage difference
   // calculate difference
   volDiff = maxVol - minVol; 
+  Serial.println(volDiff);
   // enable balancing of cell with highest voltage if necessary
   if(volDiff > balThreshold){
     balance_status[maxVol_index] = true;
+    Serial.println(balance_status_1);
+  }
+  // disable balancing of cell with lowest voltage 
+  if(balance_status[minVol_index] == true){
+    balance_status[minVol_index] = false; 
   }
   // disable balancing of all cells, if balanced
   if(volDiff < stopBalThreshold){
@@ -298,11 +305,29 @@ void controlBalancing(){
       balance_status[i] = false; 
     }
   }
+
+  // set values to hardware
+  balance_status_1 = balance_status[0];
+  balance_status_2 = balance_status[1];
+  balance_status_3 = balance_status[2];
+  balance_status_4 = balance_status[3];
+
+  Serial.print("Balance Control: ");
+  Serial.print(balance_status[maxVol_index]);
+  Serial.print("\t");
+  Serial.print(balance_status_1);
+  Serial.print("\t");
+  Serial.print(balance_status_2);
+  Serial.print("\t");
+  Serial.print(balance_status_3);
+  Serial.print("\t");
+  Serial.print(balance_status_4);
+  Serial.print("\n");
 }
 
 void calculateStartSOC(){
   float medium_vol = ((cell_1_V+cell_2_V+cell_3_V+cell_4_V)/4.0); // [V]
-  soc = (medium_vol-cutoff_temp_lower_limit)/(cutoff_voltage_upper_limit-cutoff_voltage_lower_limit)*100.0;
+  soc = (medium_vol-cutoff_voltage_lower_limit)/(cutoff_voltage_upper_limit-cutoff_voltage_lower_limit)*100.0;
 
   if(soc > 100.0){
     soc = 100; 
@@ -402,4 +427,52 @@ void loop() {
   }
 
   startingup = false;
+
+ 
+  // SOC, SOH, Error
+  Serial.print("SOC: "); 
+  Serial.print(soc); 
+  Serial.print("\t");
+  Serial.print("SOH: "); 
+  Serial.print(soh); 
+  Serial.print("\t");
+  Serial.print("Current: "); 
+  Serial.print(current); 
+  Serial.print("\t");
+  Serial.print("Error: "); 
+  Serial.print(error); 
+  Serial.print("\n");
+  // Cell voltages 
+  Serial.print("Voltage: \t");
+  Serial.print(cell_1_V);
+  Serial.print("\t");
+  Serial.print(cell_2_V);
+  Serial.print("\t");
+  Serial.print(cell_3_V);
+  Serial.print("\t");
+  Serial.print(cell_4_V);
+  Serial.print("\n");
+
+  // Cell temperatures
+  Serial.print("Temp: \t \t");
+  Serial.print(temp_1);
+  Serial.print("\t");
+  Serial.print(temp_2);
+  Serial.print("\t");
+  Serial.print(temp_3);
+  Serial.print("\t");
+  Serial.print(temp_4);
+  Serial.print("\n");
+
+  // Balance status
+  Serial.print("Balancing: \t");
+  Serial.print(balance_status_1);
+  Serial.print("\t");
+  Serial.print(balance_status_2);
+  Serial.print("\t");
+  Serial.print(balance_status_3);
+  Serial.print("\t");
+  Serial.print(balance_status_4);
+  Serial.print("\n");
+  Serial.print("------------------------------------ \n");
 }
