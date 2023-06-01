@@ -91,7 +91,32 @@ const unsigned int BATTERY_SWITCH_PIN = 26;
 const unsigned int SWITCH_0 = 30; 
 const unsigned int SWITCH_1 = 32; 
 const unsigned int SWITCH_2 = 34; 
-const unsigned int SWITCH_3 = 36; 
+const unsigned int SWITCH_3 = 36;
+
+// CAN Variables & Libraries
+#include <SPI.h>
+#include <mcp2515.h>
+
+const unsigned int CS_PIN = 49; // // CS PIN for MCP CAN Module
+MCP2515 mcp2515(CS_PIN); 
+struct can_frame canMsg1;
+struct can_frame canMsg2;
+struct can_frame canMsg3;
+struct can_frame canMsg4;
+
+byte frame_id_1 = 0x001;	// Temperature ID: 001
+byte frame_id_2 = 0x002;	// VOLTAGE ID: 002
+byte frame_id_3 = 0x003;	// Current, SOC, SOH ID: 003
+byte frame_id_4 = 0x004;	//  Balance Error Status ID: 004
+
+float temp_list[] = {temp_1, temp_2, temp_3,temp_4};
+float vol_list[] = {cell_1_V, cell_2_V, cell_3_V, cell_4_V};
+float current_soc_soh[] = {current, soc, soh};
+bool balance_error_list[] = {balance_status_1, balance_status_2, balance_status_3, balance_status_4, error};
+
+int resolution = 100;
+int can_counter=0;
+byte tmsg[2] = {0x00,0x00}; 
 
 // **************************************************************
 
@@ -136,7 +161,21 @@ void setup() {
   pinMode(SWITCH_0, OUTPUT); 
   pinMode(SWITCH_1, OUTPUT); 
   pinMode(SWITCH_2, OUTPUT); 
-  pinMode(SWITCH_3, OUTPUT); 
+  pinMode(SWITCH_3, OUTPUT);
+
+  // CAN MESSAGES
+  canMsg1.can_id  = frame_id_1;  // Temperature ID: 001
+  canMsg1.can_dlc = 8;
+  canMsg2.can_id  = frame_id_2;  // VOLTAGE ID: 002
+  canMsg2.can_dlc = 8;
+  canMsg3.can_id  = frame_id_3;  // Current, SOC, SOH ID: 003
+  canMsg3.can_dlc = 6;  
+  canMsg4.can_id  = frame_id_4;  //  Balance Error Status ID: 004
+  canMsg4.can_dlc = 5;
+  
+  mcp2515.reset();
+  mcp2515.setBitrate(CAN_125KBPS);
+  mcp2515.setNormalMode();
 }
 
 float adc2temp(int16_t adc){
@@ -379,6 +418,70 @@ void connectBattery(){ // to ensure, that only connects when safe
   }
 }
 
+
+// CAN FUNCTIONS
+void float2byte(float x, byte *var, int resolution){
+  *var = (int)(x*resolution) & 0xff;
+  *(var+1) = (int)(x*resolution) >> 8 & 0xff;
+}
+float byte2float(byte *var, int resolution){
+  //0x03F4 => 1012 => 10.12
+  return ((float) *reinterpret_cast<int*>(var))/resolution;
+}
+
+void updateCANmessages(){
+  
+  can_counter=0;  
+  for(int i = 0; i < (canMsg1.can_dlc/2); i++){ // TEMPERATURE
+  float2byte(temp_list[i],tmsg,resolution);
+  Serial.print(tmsg[1],HEX);
+  Serial.println(tmsg[0],HEX);
+  canMsg1.data[can_counter] = tmsg[1];   
+  canMsg1.data[can_counter+1] = tmsg[0];
+  can_counter = can_counter + 2;
+  }
+  can_counter=0; 
+  for(int i = 0; i < (canMsg2.can_dlc/2); i++){ // VOLTAGE
+  float2byte(vol_list[i],tmsg,resolution);
+  Serial.print(tmsg[1],HEX);
+  Serial.println(tmsg[0],HEX);
+  canMsg2.data[can_counter] = tmsg[1];   
+  canMsg2.data[can_counter+1] = tmsg[0];
+  can_counter = can_counter + 2;
+  }
+  can_counter=0; 
+  for(int i = 0; i < (canMsg3.can_dlc/2); i++){ // Current, SOC, SOH
+  float2byte(current_soc_soh[i],tmsg,resolution);
+  Serial.print(tmsg[1],HEX);
+  Serial.println(tmsg[0],HEX);
+  canMsg3.data[can_counter] = tmsg[1];   
+  canMsg3.data[can_counter+1] = tmsg[0];
+  can_counter = can_counter + 2;
+  }
+  can_counter=0; 
+  
+  for(int i = 0; i<canMsg4.can_dlc; i++){ // Balance Error Status
+    if(balance_error_list[i] == false){
+      canMsg4.data[i] = 0;   
+    }
+    else if (balance_error_list[i] == true){
+      canMsg4.data[i] = 1;  
+    }
+  }
+}
+
+void sendCANmessages(){
+  mcp2515.sendMessage(&canMsg1);  // CAN Message for Temperatures
+  mcp2515.sendMessage(&canMsg2);  // CAN Message for Voltages
+  mcp2515.sendMessage(&canMsg3);  // CAN Message for Current SOC SOH
+  mcp2515.sendMessage(&canMsg4);  // CAN Message for Balance Error Status
+  //delay(100);
+}
+
+
+
+
+
 void loop() {
 
   while((millis()-lastMeasurement) < measurementInterval){
@@ -475,4 +578,9 @@ void loop() {
   Serial.print(balance_status_4);
   Serial.print("\n");
   Serial.print("------------------------------------ \n");
+  
+  
+  // Update and Send CAN Messages
+  updateCANmessages();  
+  sendCANmessages();  
 }
