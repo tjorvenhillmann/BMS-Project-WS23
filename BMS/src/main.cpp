@@ -1,5 +1,7 @@
 #include <Arduino.h>
 #include <math.h>
+#include <SPI.h>
+#include <mcp2515.h>
 
 // ********************** global definitions **********************
 bool startingup = true;
@@ -94,9 +96,6 @@ const unsigned int SWITCH_2 = 34;
 const unsigned int SWITCH_3 = 36;
 
 // CAN Variables & Libraries
-#include <SPI.h>
-#include <mcp2515.h>
-
 const unsigned int CS_PIN = 49; // // CS PIN for MCP CAN Module
 MCP2515 mcp2515(CS_PIN); 
 struct can_frame canMsg1;
