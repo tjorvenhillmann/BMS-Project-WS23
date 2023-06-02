@@ -5,10 +5,10 @@
 
 // ********************** global definitions **********************
 bool startingup = true;
-bool error = true; 
+bool error = false; 
 unsigned long prev_time = 0; 
 float prev_voltage = 0; 
-float soc = 0; // values from 0 to 100
+float soc = 25.50; // values from 0 to 100
 float soh = 0; 
 float rul = 0; 
 const float balThreshold = 0.030; // threshold for balancing [V]
@@ -33,21 +33,21 @@ int voltage_status[4] = {0, 0, 0, 0}; // voltage within balancing threshold to c
                                       // 1: high voltage; -1: low voltage 
 
 // measurement data 
-float temp_1 = 0; 
-float temp_2 = 0; 
-float temp_3 = 0; 
-float temp_4 = 0; 
-float cell_1_V = 0; 
-float cell_2_V = 0; 
-float cell_3_V = 0; 
-float cell_4_V = 0; 
-float current = 0; 
+float temp_1 = 7.70; 
+float temp_2 = 10.15; 
+float temp_3 = 20.20; 
+float temp_4 = 25.20; 
+float cell_1_V = 2.90; 
+float cell_2_V = 3.22; 
+float cell_3_V = 3.75; 
+float cell_4_V = 3.59; 
+float current = 4.50; 
 
 // output data 
-bool balance_status_1 = false; 
+bool balance_status_1 = true; 
 bool balance_status_2 = false;
 bool balance_status_3 = false; 
-bool balance_status_4 = false; 
+bool balance_status_4 = true; 
 bool battery_switch = false;
 
 // safety limits (read-only)
@@ -163,6 +163,7 @@ void setup() {
   pinMode(SWITCH_3, OUTPUT);
 
   // CAN MESSAGES
+  while (!Serial);
   canMsg1.can_id  = frame_id_1;  // Temperature ID: 001
   canMsg1.can_dlc = 8;
   canMsg2.can_id  = frame_id_2;  // VOLTAGE ID: 002
@@ -577,7 +578,6 @@ void loop() {
   Serial.print(balance_status_4);
   Serial.print("\n");
   Serial.print("------------------------------------ \n");
-  
   
   // Update and Send CAN Messages
   updateCANmessages();  
