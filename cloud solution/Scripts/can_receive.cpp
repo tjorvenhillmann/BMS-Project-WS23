@@ -3,32 +3,37 @@
 #include <Arduino.h>
 
 // Data struct for diffrent can frames
-struct Temps {
-  float temp_1 = 0.0;
-  float temp_2 = 0.0;
-  float temp_3 = 0.0;
-  float temp_4 = 0.0;
+struct Voltages
+{
+  float cell_V1 = 0;
+  float cell_V2 = 0;
+  float cell_V3 = 0;
+  float cell_V4 = 0; 
+  float pack_voltage = 0;
 };
 
-struct Voltages {
-  float cell_1_v = 0.0;
-  float cell_2_v = 0.0;
-  float cell_3_v = 0.0;
-  float cell_4_v = 0.0;
+struct Temps
+{
+  float temp1 = 0;
+  float temp2 = 0;
+  float temp3 = 0;
+  float temp4 = 0;
 };
 
-struct CurSocSohCap{
-  float current = 0;
-  float SOC = 0;
-  float SOH = 0;
-  float capacity = 0;
+struct CurSocSohCap
+{
+  float current = 0.0;
+  uint16_t soc = 100;
+  uint16_t soh = 99; // %
+  uint16_t cap = 1500; // mAh
 };
 
-struct Status {
-  bool balance_status_cell_1 = 0;
-  bool balance_status_cell_2 = 0;
-  bool balance_status_cell_3 = 0;
-  bool balance_status_cell_4 = 0;
+struct Status
+{
+  bool balance_status1 = 0;
+  bool balance_status2 = 0;
+  bool balance_status3 = 0;
+  bool balance_status4 = 0;
 };
 
 // Additional variables
@@ -72,33 +77,33 @@ void printCAN_Frames(){
   // Just a bunch of serial prints for debugging purposes
   if(canMsg.can_id == 1){
     Serial.println("New Temperature values received:");
-    Serial.print(temps.temp_1);
+    Serial.print(temps.temp1);
     Serial.print("    ");
-    Serial.print(temps.temp_2);
+    Serial.print(temps.temp2);
     Serial.print("    ");
-    Serial.print(temps.temp_3);
+    Serial.print(temps.temp3);
     Serial.print("    ");
-    Serial.println(temps.temp_4);
+    Serial.println(temps.temp4);
   }
   if(canMsg.can_id == 2){
     Serial.println("New Voltage values received:");
-    Serial.print(voltages.cell_1_v);
+    Serial.print(voltages.cell_V1);
     Serial.print("    ");
-    Serial.print(voltages.cell_2_v);
+    Serial.print(voltages.cell_V2);
     Serial.print("    ");
-    Serial.print(voltages.cell_3_v);
+    Serial.print(voltages.cell_V3);
     Serial.print("    ");
-    Serial.println(voltages.cell_4_v);
+    Serial.println(voltages.cell_V4);
   }
   if(canMsg.can_id == 3){
     Serial.println("New Cur, SOC, SOH and Cap values received:");
     Serial.print(curSocSohCap.current);
     Serial.print("    ");
-    Serial.print(curSocSohCap.SOC);
+    Serial.print(curSocSohCap.soc);
     Serial.print("    ");
-    Serial.print(curSocSohCap.SOH);
+    Serial.print(curSocSohCap.soc);
     Serial.print("    ");
-    Serial.println(curSocSohCap.capacity);
+    Serial.println(curSocSohCap.cap);
   }
   if(canMsg.can_id == 4){
   }
@@ -109,24 +114,24 @@ void decodeCAN_Message(){
   if(canMsg.can_id == 1){
     // Get all temp values from can_frame
     Serial.println(byte2float(&canMsg.data[0],100));
-    temps.temp_1 = byte2float(&canMsg.data[0],100);
-    temps.temp_2 = byte2float(&canMsg.data[2],100);
-    temps.temp_3 = byte2float(&canMsg.data[4],100);
-    temps.temp_4 = byte2float(&canMsg.data[6],100);
+    temps.temp1 = byte2float(&canMsg.data[0],100);
+    temps.temp2 = byte2float(&canMsg.data[2],100);
+    temps.temp3 = byte2float(&canMsg.data[4],100);
+    temps.temp4 = byte2float(&canMsg.data[6],100);
   }
   if(canMsg.can_id == 2){
     // Get all voltage values from can_frame and calculate pack voltage
-    voltages.cell_1_v = byte2float(&canMsg.data[0],1000);
-    voltages.cell_2_v = byte2float(&canMsg.data[2],1000);
-    voltages.cell_3_v = byte2float(&canMsg.data[4],1000);
-    voltages.cell_4_v = byte2float(&canMsg.data[6],1000);
+    voltages.cell_V1 = byte2float(&canMsg.data[0],1000);
+    voltages.cell_V2 = byte2float(&canMsg.data[2],1000);
+    voltages.cell_V3 = byte2float(&canMsg.data[4],1000);
+    voltages.cell_V4 = byte2float(&canMsg.data[6],1000);
   }
   if(canMsg.can_id == 3){
     // Get current, capacity, SOC and SOH values from can_frame
     curSocSohCap.current = byte2float(&canMsg.data[0],1000);
-    curSocSohCap.SOC = byte2float(&canMsg.data[2],10000);
-    curSocSohCap.SOH = byte2float(&canMsg.data[4],10000);
-    curSocSohCap.capacity = byte2float(&canMsg.data[6],10000);
+    curSocSohCap.soc = byte2float(&canMsg.data[2],10000);
+    curSocSohCap.soh = byte2float(&canMsg.data[4],10000);
+    curSocSohCap.cap = byte2float(&canMsg.data[6],10000);
   }
   if(canMsg.can_id == 4){
   }
@@ -167,4 +172,5 @@ void setup() {
 void loop() {
   // Just read and display new messages until eternity for now
   readCAN_Message();
+  delay(100);
 }
