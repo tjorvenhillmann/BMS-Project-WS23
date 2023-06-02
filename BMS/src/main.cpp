@@ -1,23 +1,25 @@
 #include <Arduino.h>
 #include <math.h>
+#include <SPI.h>
+#include <mcp2515.h>
 
 // ********************** global definitions **********************
 bool startingup = true;
-bool error = true; 
+bool error = false; 
 unsigned long prev_time = 0; 
 float prev_voltage = 0; 
-float soc = 0; // values from 0 to 100
+float soc = 25.50; // values from 0 to 100
 float soh = 0; 
 float rul = 0; 
-float balThreshold = 0.030; // threshold for balancing [V]
-float stopBalThreshold = 0.005; // threshold for stopping [V]
+const float balThreshold = 0.030; // threshold for balancing [V]
+const float stopBalThreshold = 0.005; // threshold for stopping [V]
 bool charging = false; // indicates charging status: charging = true, discharging = false
 bool old_status = false; 
 unsigned long charging_timer_offset = 0; 
 
 // parameters for loop delay
 unsigned long lastMeasurement = 0; 
-const unsigned long measurementInterval = 5; // measure every 5 seconds
+const unsigned long measurementInterval = 5e3; // measure every 5 seconds
 
 // calibration data 
 float v_ref = 5.0; // reference voltage in V
@@ -31,21 +33,21 @@ int voltage_status[4] = {0, 0, 0, 0}; // voltage within balancing threshold to c
                                       // 1: high voltage; -1: low voltage 
 
 // measurement data 
-float temp_1 = 0; 
-float temp_2 = 0; 
-float temp_3 = 0; 
-float temp_4 = 0; 
-float cell_1_V = 0; 
-float cell_2_V = 0; 
-float cell_3_V = 0; 
-float cell_4_V = 0; 
-float current = 0; 
+float temp_1 = 7.70; 
+float temp_2 = 10.15; 
+float temp_3 = 20.20; 
+float temp_4 = 25.20; 
+float cell_1_V = 2.90; 
+float cell_2_V = 3.22; 
+float cell_3_V = 3.75; 
+float cell_4_V = 3.59; 
+float current = 4.50; 
 
 // output data 
-bool balance_status_1 = false; 
+bool balance_status_1 = true; 
 bool balance_status_2 = false;
 bool balance_status_3 = false; 
-bool balance_status_4 = false; 
+bool balance_status_4 = true; 
 bool battery_switch = false;
 
 // safety limits (read-only)
@@ -91,7 +93,29 @@ const unsigned int BATTERY_SWITCH_PIN = 26;
 const unsigned int SWITCH_0 = 30; 
 const unsigned int SWITCH_1 = 32; 
 const unsigned int SWITCH_2 = 34; 
-const unsigned int SWITCH_3 = 36; 
+const unsigned int SWITCH_3 = 36;
+
+// CAN Variables & Libraries
+const unsigned int CS_PIN = 49; // // CS PIN for MCP CAN Module
+MCP2515 mcp2515(CS_PIN); 
+struct can_frame canMsg1;
+struct can_frame canMsg2;
+struct can_frame canMsg3;
+struct can_frame canMsg4;
+
+byte frame_id_1 = 0x001;	// Temperature ID: 001
+byte frame_id_2 = 0x002;	// VOLTAGE ID: 002
+byte frame_id_3 = 0x003;	// Current, SOC, SOH ID: 003
+byte frame_id_4 = 0x004;	//  Balance Error Status ID: 004
+
+float temp_list[] = {temp_1, temp_2, temp_3,temp_4};
+float vol_list[] = {cell_1_V, cell_2_V, cell_3_V, cell_4_V};
+float current_soc_soh[] = {current, soc, soh};
+bool balance_error_list[] = {balance_status_1, balance_status_2, balance_status_3, balance_status_4, error};
+
+int resolution = 100;
+int can_counter=0;
+byte tmsg[2] = {0x00,0x00}; 
 
 // **************************************************************
 
@@ -113,6 +137,7 @@ void connectBattery();
 void setup() {
   // put your setup code here, to run once: 
   // Pin configuration
+  Serial.begin(9600); 
   // Analouge pins A0-A3 for temperature sensors
   pinMode(TEMP_1_PIN, INPUT); 
   pinMode(TEMP_2_PIN, INPUT); 
@@ -135,7 +160,22 @@ void setup() {
   pinMode(SWITCH_0, OUTPUT); 
   pinMode(SWITCH_1, OUTPUT); 
   pinMode(SWITCH_2, OUTPUT); 
-  pinMode(SWITCH_3, OUTPUT); 
+  pinMode(SWITCH_3, OUTPUT);
+
+  // CAN MESSAGES
+  while (!Serial);
+  canMsg1.can_id  = frame_id_1;  // Temperature ID: 001
+  canMsg1.can_dlc = 8;
+  canMsg2.can_id  = frame_id_2;  // VOLTAGE ID: 002
+  canMsg2.can_dlc = 8;
+  canMsg3.can_id  = frame_id_3;  // Current, SOC, SOH ID: 003
+  canMsg3.can_dlc = 6;  
+  canMsg4.can_id  = frame_id_4;  //  Balance Error Status ID: 004
+  canMsg4.can_dlc = 5;
+  
+  mcp2515.reset();
+  mcp2515.setBitrate(CAN_125KBPS);
+  mcp2515.setNormalMode();
 }
 
 float adc2temp(int16_t adc){
@@ -158,10 +198,10 @@ float adc2temp(int16_t adc){
 
 void checkCurrent_withACS712(){
   // read sensor
-  int offset = 2500; // [mV], 0A at 2.5V
+  float offset = 2.500; // [V], 0A at 2.5V
   int sensValue = analogRead(CURRENT_PIN); // read sensor value range 0-1024
-  double sensVoltage = (sensValue/1024)*v_ref; // calculate voltage in mV
-  float Amp = ((sensVoltage - offset)/66.0); // [A], sensor measures 66 mV/A
+  double sensVoltage = (sensValue/1024.0)*v_ref; // calculate voltage in V
+  float Amp = ((sensVoltage - offset)/0.066); // [A], sensor measures 66 mV/A
   
   current = Amp; // [A]
 
@@ -277,9 +317,15 @@ void controlBalancing(){
   // Balancing control based on cell voltage difference
   // calculate difference
   volDiff = maxVol - minVol; 
+  Serial.println(volDiff);
   // enable balancing of cell with highest voltage if necessary
   if(volDiff > balThreshold){
     balance_status[maxVol_index] = true;
+    Serial.println(balance_status_1);
+  }
+  // disable balancing of cell with lowest voltage 
+  if(balance_status[minVol_index] == true){
+    balance_status[minVol_index] = false; 
   }
   // disable balancing of all cells, if balanced
   if(volDiff < stopBalThreshold){
@@ -298,11 +344,29 @@ void controlBalancing(){
       balance_status[i] = false; 
     }
   }
+
+  // set values to hardware
+  balance_status_1 = balance_status[0];
+  balance_status_2 = balance_status[1];
+  balance_status_3 = balance_status[2];
+  balance_status_4 = balance_status[3];
+
+  Serial.print("Balance Control: ");
+  Serial.print(balance_status[maxVol_index]);
+  Serial.print("\t");
+  Serial.print(balance_status_1);
+  Serial.print("\t");
+  Serial.print(balance_status_2);
+  Serial.print("\t");
+  Serial.print(balance_status_3);
+  Serial.print("\t");
+  Serial.print(balance_status_4);
+  Serial.print("\n");
 }
 
 void calculateStartSOC(){
   float medium_vol = ((cell_1_V+cell_2_V+cell_3_V+cell_4_V)/4.0); // [V]
-  soc = (medium_vol-cutoff_temp_lower_limit)/(cutoff_voltage_upper_limit-cutoff_voltage_lower_limit)*100.0;
+  soc = (medium_vol-cutoff_voltage_lower_limit)/(cutoff_voltage_upper_limit-cutoff_voltage_lower_limit)*100.0;
 
   if(soc > 100.0){
     soc = 100; 
@@ -354,6 +418,70 @@ void connectBattery(){ // to ensure, that only connects when safe
   }
 }
 
+
+// CAN FUNCTIONS
+void float2byte(float x, byte *var, int resolution){
+  *var = (int)(x*resolution) & 0xff;
+  *(var+1) = (int)(x*resolution) >> 8 & 0xff;
+}
+float byte2float(byte *var, int resolution){
+  //0x03F4 => 1012 => 10.12
+  return ((float) *reinterpret_cast<int*>(var))/resolution;
+}
+
+void updateCANmessages(){
+  
+  can_counter=0;  
+  for(int i = 0; i < (canMsg1.can_dlc/2); i++){ // TEMPERATURE
+  float2byte(temp_list[i],tmsg,resolution);
+  Serial.print(tmsg[1],HEX);
+  Serial.println(tmsg[0],HEX);
+  canMsg1.data[can_counter] = tmsg[1];   
+  canMsg1.data[can_counter+1] = tmsg[0];
+  can_counter = can_counter + 2;
+  }
+  can_counter=0; 
+  for(int i = 0; i < (canMsg2.can_dlc/2); i++){ // VOLTAGE
+  float2byte(vol_list[i],tmsg,resolution);
+  Serial.print(tmsg[1],HEX);
+  Serial.println(tmsg[0],HEX);
+  canMsg2.data[can_counter] = tmsg[1];   
+  canMsg2.data[can_counter+1] = tmsg[0];
+  can_counter = can_counter + 2;
+  }
+  can_counter=0; 
+  for(int i = 0; i < (canMsg3.can_dlc/2); i++){ // Current, SOC, SOH
+  float2byte(current_soc_soh[i],tmsg,resolution);
+  Serial.print(tmsg[1],HEX);
+  Serial.println(tmsg[0],HEX);
+  canMsg3.data[can_counter] = tmsg[1];   
+  canMsg3.data[can_counter+1] = tmsg[0];
+  can_counter = can_counter + 2;
+  }
+  can_counter=0; 
+  
+  for(int i = 0; i<canMsg4.can_dlc; i++){ // Balance Error Status
+    if(balance_error_list[i] == false){
+      canMsg4.data[i] = 0;   
+    }
+    else if (balance_error_list[i] == true){
+      canMsg4.data[i] = 1;  
+    }
+  }
+}
+
+void sendCANmessages(){
+  mcp2515.sendMessage(&canMsg1);  // CAN Message for Temperatures
+  mcp2515.sendMessage(&canMsg2);  // CAN Message for Voltages
+  mcp2515.sendMessage(&canMsg3);  // CAN Message for Current SOC SOH
+  mcp2515.sendMessage(&canMsg4);  // CAN Message for Balance Error Status
+  //delay(100);
+}
+
+
+
+
+
 void loop() {
 
   while((millis()-lastMeasurement) < measurementInterval){
@@ -402,4 +530,56 @@ void loop() {
   }
 
   startingup = false;
+
+ 
+  // SOC, SOH, Error
+  Serial.print("SOC: "); 
+  Serial.print(soc); 
+  Serial.print("\t");
+  Serial.print("SOH: "); 
+  Serial.print(soh); 
+  Serial.print("\t");
+  Serial.print("Current: "); 
+  Serial.print(current); 
+  Serial.print("\t");
+  Serial.print("Error: "); 
+  Serial.print(error); 
+  Serial.print("\n");
+  // Cell voltages 
+  Serial.print("Voltage: \t");
+  Serial.print(cell_1_V);
+  Serial.print("\t");
+  Serial.print(cell_2_V);
+  Serial.print("\t");
+  Serial.print(cell_3_V);
+  Serial.print("\t");
+  Serial.print(cell_4_V);
+  Serial.print("\n");
+
+  // Cell temperatures
+  Serial.print("Temp: \t \t");
+  Serial.print(temp_1);
+  Serial.print("\t");
+  Serial.print(temp_2);
+  Serial.print("\t");
+  Serial.print(temp_3);
+  Serial.print("\t");
+  Serial.print(temp_4);
+  Serial.print("\n");
+
+  // Balance status
+  Serial.print("Balancing: \t");
+  Serial.print(balance_status_1);
+  Serial.print("\t");
+  Serial.print(balance_status_2);
+  Serial.print("\t");
+  Serial.print(balance_status_3);
+  Serial.print("\t");
+  Serial.print(balance_status_4);
+  Serial.print("\n");
+  Serial.print("------------------------------------ \n");
+  
+  // Update and Send CAN Messages
+  updateCANmessages();  
+  sendCANmessages();  
 }
