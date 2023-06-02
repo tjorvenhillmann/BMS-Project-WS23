@@ -32,7 +32,7 @@ MCP2515 mcp2515(49); // CS PIN from MCP CAN Module
 int resolution = 100;
 byte frame_id_1 = 0x001;  // temperature ID
 byte frame_id_2 = 0x002;  // Voltage ID
-byte frame_id_3 = 0x003;  // Current SOH
+byte frame_id_3 = 0x003;  // Current SOC
 byte frame_id_4 = 0x004;  // Balance Status
 byte hexmsg[2] = {0,0};
 
@@ -52,7 +52,7 @@ int power = 0; //power
 float temp_list[4];
 float vol_list[4];
 float current_soc_soh_list[4];
-int balance_list[4];
+int balance_list[5]; //last one is error-state 
 
 
 
@@ -102,6 +102,8 @@ void setup()
 
   //QUADRANT 3 (SOC)
   mylcd.Draw_Round_Rectangle(20, 178, 90, 300, 6);
+  mylcd.Print_String("100 %", 95, 180);
+  mylcd.Print_String("  0 %", 95, 280);
 
 
   //QUADRANT 4 (Voltage, Cell voltage)
@@ -136,21 +138,21 @@ void getCANmessage(){
     else if (canMsg.can_id == frame_id_2)
     {
       for (int i = 0; i<canMsg.can_dlc; i+=2)  {  // print the data
-      //Serial.print("Voltage: ");
+      Serial.print("Voltage: ");
       hexmsg[1] = canMsg.data[i];
       hexmsg[0] = canMsg.data[i+1];
       vol_list[i/2] = byte2float(hexmsg, 100);
-      //Serial.println(vol_list[i/2]);
+      Serial.println(vol_list[i/2]);
       }  
     }
     else if (canMsg.can_id == frame_id_3)
     {
       for (int i = 0; i<canMsg.can_dlc; i+=2)  {  // print the data
-      //Serial.println("Current & SOH & SOC & CAPACITY: ");
+      Serial.println("Current & SOH & SOC & CAPACITY: ");
       hexmsg[1] = canMsg.data[i];
       hexmsg[0] = canMsg.data[i+1];
       current_soc_soh_list[i/2] = byte2float(hexmsg, 100);
-      //Serial.println( current_soc_soh_list[i]);
+      Serial.println( current_soc_soh_list[i]);
       }      
     }
     else if (canMsg.can_id == frame_id_4)
@@ -170,7 +172,12 @@ void clearSOC() {
 
 void setSOC(int SOC) {
 
-if (SOC >= 0 && SOC <= 20) //20%
+if (SOC == 0)
+  {
+    clearSOC(); //Erase all segments
+  }
+
+if (SOC > 0 && SOC <= 20) //20%
   {
     clearSOC(); //Erase all segments
     mylcd.Set_Draw_color(GREEN);
@@ -263,20 +270,15 @@ void loop()
     mylcd.Print_String("offline", 350, 5);
   }
 
-  switch (1)
+  if (balance_list[5] == true)
   {
-  case 1:
     mylcd.Set_Text_colour(RED);
     mylcd.Print_String("Error", 350, 35);
-    break;
-  case 2:
-    mylcd.Set_Text_colour(YELLOW);
-    mylcd.Print_String("Warning", 350, 35);
-    break;
-  case 3:
+  }
+  else
+  {
     mylcd.Set_Text_colour(GREEN);
     mylcd.Print_String("None", 350, 35);
-    break;
   }
 
   //Quadrant 3 (SOC)
