@@ -12,17 +12,18 @@ float soc; // values from 0 to 100
 float soh; 
 float rul; 
 const float balThreshold = 0.030; // threshold for balancing [V]
-const float stopBalThreshold = 0.005; // threshold for stopping [V]
+const float stopBalThreshold = 0.01; // threshold for stopping [V]
 bool charging = false; // indicates charging status: charging = true, discharging = false
 bool old_status = false; 
 unsigned long charging_timer_offset = 0; 
 
 // parameters for loop delay
 unsigned long lastMeasurement = 0; 
-const unsigned long measurementInterval = 5e3; // measure every 5 seconds
+const unsigned long measurementInterval = 2e3; // measure every 2 seconds [ms]
 
 // calibration data 
 float v_ref = 5.0; // reference voltage in V
+float current_calibration_factor = 0.667; 
 // double temp_sens_offset = 12; // offset for temp_sensor [C]
 
 // status indications 
@@ -201,7 +202,7 @@ void checkCurrent_withACS712(){
   float offset = 2.500; // [V], 0A at 2.5V
   int sensValue = analogRead(CURRENT_PIN); // read sensor value range 0-1024
   double sensVoltage = (sensValue/1024.0)*v_ref; // calculate voltage in V
-  float Amp = ((sensVoltage - offset)/0.066); // [A], sensor measures 66 mV/A
+  float Amp = ((sensVoltage - offset)/0.066)*current_calibration_factor; // [A], sensor measures 66 mV/A
   
   current = Amp; // [A]
   current_soc_soh[0] = current; // Update for CAN
@@ -371,10 +372,29 @@ void controlBalancing(){
   balance_status_3 = balance_status[2];
   balance_status_4 = balance_status[3];
 
-  digitalWrite(BALANCE_STATUS_1_PIN, balance_status[0]);
-  digitalWrite(BALANCE_STATUS_2_PIN, balance_status[1]);
-  digitalWrite(BALANCE_STATUS_2_PIN, balance_status[2]);
-  digitalWrite(BALANCE_STATUS_2_PIN, balance_status[3]);
+  if(balance_status[0]){
+    digitalWrite(BALANCE_STATUS_1_PIN, HIGH);
+  }else{
+    digitalWrite(BALANCE_STATUS_1_PIN, LOW);
+  }
+
+   if(balance_status[1]){
+    digitalWrite(BALANCE_STATUS_2_PIN, HIGH);
+  }else{
+    digitalWrite(BALANCE_STATUS_2_PIN, LOW);
+  }
+
+   if(balance_status[2]){
+    digitalWrite(BALANCE_STATUS_3_PIN, HIGH);
+  }else{
+    digitalWrite(BALANCE_STATUS_3_PIN, LOW);
+  }
+  
+  if(balance_status[3]){
+    digitalWrite(BALANCE_STATUS_4_PIN, HIGH);
+  }else{
+    digitalWrite(BALANCE_STATUS_4_PIN, LOW);
+  }
 
   // Set to CAN-Message
   balance_error_list[0] = balance_status[0];
@@ -432,7 +452,7 @@ void calculateStartSOC(){
 void battery_state(){
   unsigned long current_time = millis(); 
   float elapsed_time = (current_time-prev_time)/1000.0; 
-  float charge_change = current * elapsed_time/3600.0; // [As]
+  float charge_change = -current * elapsed_time/3600.0; // [As]
   float medium_vol = ((cell_1_V+cell_2_V+cell_3_V+cell_4_V)/4.0); // [V]
 
   // SOC
