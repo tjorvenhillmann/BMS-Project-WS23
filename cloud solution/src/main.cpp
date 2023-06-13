@@ -53,6 +53,9 @@ struct can_frame canMsg;
 byte msg[2] = {0,0};
 bool newMsgFlag = false;
 
+int time1 = 0;
+int time2 = 0;
+
 // Create instance of CAN module
 MCP2515 mcp2515(15);
 
@@ -105,8 +108,8 @@ float byte2float(__u8 * var, int resolution){
     // Dicuss wether we send MSB or LSB ?????
     msg[0] = *(var+1);
     msg[1] = *(var);
-    // Serial.print(msg[1],HEX);
-    // Serial.println(msg[0],HEX);
+    Serial.print(msg[1],HEX);
+    Serial.println(msg[0],HEX);
     return ((float) *reinterpret_cast<int*>(msg))/resolution;
 }
 
@@ -187,24 +190,29 @@ void decodeCAN_Message(){
 void readCAN_Message()
 {
   // When new message received print out message
-  if (mcp2515.readMessage(&canMsg) == MCP2515::ERROR_OK) {
-    Serial.println("New Message received");
-    Serial.println("ID  DLC");
-    Serial.print(canMsg.can_id, HEX); // print ID
-    Serial.print("    ");  
-    Serial.print(canMsg.can_dlc, HEX); // print DLC
-    Serial.println(" ");
-    newMsgFlag = true;
-    // For printing data as raw byte values
-    // for(int i = 0; i < canMsg.can_dlc;i++){
-    //     Serial.print(canMsg.data[i],HEX);
-    //     Serial.print(" ");
-    //     Serial.println(canMsg.data[i],BIN);
-    // }
+  int counter = 0;
+  while(counter != 4)
+  {
+    if (mcp2515.readMessage(&canMsg) == MCP2515::ERROR_OK) {
+        Serial.println("New Message received");
+        Serial.println("ID  DLC");
+        Serial.print(canMsg.can_id, HEX); // print ID
+        Serial.print("    ");  
+        Serial.print(canMsg.can_dlc, HEX); // print DLC
+        Serial.println(" ");
+        counter += 1;
+        // For printing data as raw byte values
+        // for(int i = 0; i < canMsg.can_dlc;i++){
+        //     Serial.print(canMsg.data[i],HEX);
+        //     Serial.print(" ");
+        //     Serial.println(canMsg.data[i],BIN);
+        // }
 
-    // Decode and store new message into structs for each frame 
-    decodeCAN_Message();
-    printCAN_Frames();
+        // Decode and store new message into structs for each frame 
+        decodeCAN_Message();
+        // printCAN_Frames();
+  }
+
   }
   //Serial.println("No message received!");
 }
@@ -221,11 +229,11 @@ void set_random_voltages() {
   voltages.cell_V1 = v1/100.0;
   voltages.cell_V2 = v2/100.0;
   voltages.cell_V3 = v3/100.0;
-  voltages.cell_V4 = v4/100.0;
+  //voltages.cell_V4 = v4/100.0;
   Serial.println(voltages.cell_V1);
   Serial.println(voltages.cell_V2);
   Serial.println(voltages.cell_V3);
-  Serial.println(voltages.cell_V4);
+  //Serial.println(voltages.cell_V4);
 }
 
 void set_random_temps(){
@@ -288,8 +296,9 @@ void setup() {
 void loop() {
     // Section for getting new CAN data 
     readCAN_Message();
+    printCAN_Frames();
 
-    if (newMsgFlag)
+    if (1)
     {
         // Store measured value into point
         bms_voltage.clearFields();
@@ -349,7 +358,7 @@ void loop() {
         }
 
         // Reset new Msg Flag 
-        newMsgFlag = false;
+        //newMsgFlag = false;
     }
 
 }
