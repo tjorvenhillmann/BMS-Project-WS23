@@ -11,8 +11,8 @@ float prev_voltage = 0;
 float soc; // values from 0 to 100
 float soh; 
 float rul; 
-const float balThreshold = 0.030; // threshold for balancing [V]
-const float stopBalThreshold = 0.01; // threshold for stopping [V]
+const float balThreshold = 0.07; // threshold for balancing [V]
+const float stopBalThreshold = 0.03; // threshold for stopping [V]
 bool charging = false; // indicates charging status: charging = true, discharging = false
 bool old_status = false; 
 unsigned long charging_timer_offset = 0; 
@@ -61,7 +61,7 @@ const float cutoff_voltage_upper_limit = 4.2; // [V]
 const float nom_voltage = 3.6; // [V]
 const float nom_capacity = 1500.0; // [mAh]
 const float stopChargingCurrent = 0.1; // [A]
-const float charging_cutoff_current = 0.75; // current maximum [A] 
+const float charging_cutoff_current = 2; // current maximum [A] (0.75)
 const float discharging_cutoff_current = -10.0; // negative current maximum [A] 
 const long charge_time = 150.0*60.0*1000.0; // maximum charging time [ms]
 
@@ -340,6 +340,7 @@ void controlBalancing(){
     Serial.print("\n"); 
     Serial.println("0 entry!!!");
   }
+
   // disable balancing of cell with lowest voltage 
   if(balance_status[minVol_index] == true){
     balance_status[minVol_index] = false; 
