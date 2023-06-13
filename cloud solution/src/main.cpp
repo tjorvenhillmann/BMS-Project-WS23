@@ -48,6 +48,10 @@ InfluxDBClient client(INFLUXDB_URL, INFLUXDB_ORG, INFLUXDB_BUCKET, INFLUXDB_TOKE
 
 // Can receice frame 
 struct can_frame canMsg;
+struct can_frame canMsg1;
+struct can_frame canMsg2;
+struct can_frame canMsg3;
+struct can_frame canMsg4;
 
 // Response byte array used for converting to float 
 byte msg[2] = {0,0};
@@ -91,10 +95,10 @@ struct CurSoCSoHCap
 
 struct Status
 {
-  bool balance_status1 = 0;
-  bool balance_status2 = 0;
-  bool balance_status3 = 0;
-  bool balance_status4 = 0;
+  uint8_t balance_status1 = 0;
+  uint8_t balance_status2 = 0;
+  uint8_t balance_status3 = 0;
+  uint8_t balance_status4 = 0;
 };
 
 // Create struct objects
@@ -103,14 +107,28 @@ Temps temps;
 CurSoCSoHCap curSocSohCap;
 Status status;
 
-float byte2float(__u8 * var, int resolution){
-     // Extract to bytes from adress
+float byte2float_v1(__u8 * var, int resolution){
+    // Extract to bytes from adress
     // Dicuss wether we send MSB or LSB ?????
     msg[0] = *(var+1);
     msg[1] = *(var);
     Serial.print(msg[1],HEX);
     Serial.println(msg[0],HEX);
     return ((float) *reinterpret_cast<int*>(msg))/resolution;
+}
+
+float byte2float(__u8 * var, int resolution){
+    // Extract to bytes from adress
+    // Dicuss wether we send MSB or LSB ?????
+    msg[0] = *(var+1);
+    msg[1] = *(var);
+    // Serial.print(msg[1],HEX);
+    // Serial.println(msg[0],HEX);
+
+    int16_t signed_msg = 0;
+    signed_msg = msg[1] << 8 | msg[0];
+
+    return float(signed_msg)/resolution;
 }
 
 void setupCAN()
@@ -156,6 +174,14 @@ void printCAN_Frames(){
     Serial.println(curSocSohCap.cap);
   }
   if(canMsg.can_id == 4){
+    Serial.println("New Balance status received:");
+    Serial.print(status.balance_status1);
+    Serial.print("    ");
+    Serial.print(status.balance_status2);
+    Serial.print("    ");
+    Serial.print(status.balance_status3);
+    Serial.print("    ");
+    Serial.println(status.balance_status4);
   }
 }
 
@@ -184,6 +210,10 @@ void decodeCAN_Message(){
     //curSocSohCap.cap = byte2float(&canMsg.data[6],100);
   }
   if(canMsg.can_id == 4){
+    status.balance_status1 = uint8_t(canMsg.data[0]);
+    status.balance_status2 = uint8_t(canMsg.data[1]);
+    status.balance_status3 = uint8_t(canMsg.data[2]);
+    status.balance_status1 = uint8_t(canMsg.data[3]);
   }
 }
 
@@ -194,13 +224,12 @@ void readCAN_Message()
   while(counter != 4)
   {
     if (mcp2515.readMessage(&canMsg) == MCP2515::ERROR_OK) {
-        Serial.println("New Message received");
-        Serial.println("ID  DLC");
-        Serial.print(canMsg.can_id, HEX); // print ID
-        Serial.print("    ");  
-        Serial.print(canMsg.can_dlc, HEX); // print DLC
-        Serial.println(" ");
-        counter += 1;
+        Serial.print("New Message received -> ID:  ");
+        Serial.println(canMsg.can_id, HEX); // print ID
+         
+        // Serial.print(canMsg.can_dlc, HEX); // print DLC
+        // Serial.println(" ");
+        
         // For printing data as raw byte values
         // for(int i = 0; i < canMsg.can_dlc;i++){
         //     Serial.print(canMsg.data[i],HEX);
@@ -208,13 +237,22 @@ void readCAN_Message()
         //     Serial.println(canMsg.data[i],BIN);
         // }
 
+        switch(canMsg.can_id){
+            case 0x01: canMsg1 = canMsg;
+            case 0x02: canMsg2 = canMsg;
+            case 0x03: canMsg3 = canMsg;
+            case 0x04: canMsg4 = canMsg;
+        }
+
+        counter += 1;
+
         // Decode and store new message into structs for each frame 
         decodeCAN_Message();
         // printCAN_Frames();
+    } 
   }
 
-  }
-  //Serial.println("No message received!");
+  Serial.println("    "); 
 }
 
 void set_random_voltages() {
@@ -296,69 +334,63 @@ void setup() {
 void loop() {
     // Section for getting new CAN data 
     readCAN_Message();
-    printCAN_Frames();
+    //printCAN_Frames();
 
-    if (1)
-    {
-        // Store measured value into point
-        bms_voltage.clearFields();
-        bms_temps.clearFields();
-        bms_stats.clearFields();
-        bms_balStatus.clearFields();
-        // Report RSSI of currently connected network
-        // set_random_voltages();
-        // set_random_temps();
-        static float pack_voltage = 0.0;
-        pack_voltage = voltages.cell_V1 + voltages.cell_V2 + voltages.cell_V3 + voltages.cell_V4;
-        bms_voltage.addField("cell_V1", voltages.cell_V1);
-        bms_voltage.addField("cell_V2", voltages.cell_V2);
-        bms_voltage.addField("cell_V3", voltages.cell_V3);
-        bms_voltage.addField("cell_V4", voltages.cell_V4);
-        bms_voltage.addField("pack_voltage", pack_voltage);
-        bms_temps.addField("Temp_Cell1", temps.temp1);
-        bms_temps.addField("Temp_Cell2", temps.temp2);
-        bms_temps.addField("Temp_Cell3", temps.temp3);
-        bms_temps.addField("Temp_Cell4", temps.temp4);
-        bms_stats.addField("SoC", curSocSohCap.soc);
-        bms_stats.addField("SoH", curSocSohCap.soh);
-        bms_stats.addField("Current", curSocSohCap.current);
-        bms_stats.addField("Capacity", curSocSohCap.cap);
-        bms_balStatus.addField("balance1", status.balance_status1);
-        bms_balStatus.addField("balance2", status.balance_status1);
-        bms_balStatus.addField("balance3", status.balance_status1);
-        bms_balStatus.addField("balance4", status.balance_status1);
+    // Store measured value into point
+    bms_voltage.clearFields();
+    bms_temps.clearFields();
+    bms_stats.clearFields();
+    bms_balStatus.clearFields();
+    // Report RSSI of currently connected network
+    // set_random_voltages();
+    // set_random_temps();
+    static float pack_voltage = 0.0;
+    pack_voltage = voltages.cell_V1 + voltages.cell_V2 + voltages.cell_V3 + voltages.cell_V4;
+    bms_voltage.addField("cell_V1", voltages.cell_V1);
+    bms_voltage.addField("cell_V2", voltages.cell_V2);
+    bms_voltage.addField("cell_V3", voltages.cell_V3);
+    bms_voltage.addField("cell_V4", voltages.cell_V4);
+    bms_voltage.addField("pack_voltage", pack_voltage);
+    bms_temps.addField("Temp_Cell1", temps.temp1);
+    bms_temps.addField("Temp_Cell2", temps.temp2);
+    bms_temps.addField("Temp_Cell3", temps.temp3);
+    bms_temps.addField("Temp_Cell4", temps.temp4);
+    bms_stats.addField("SoC", curSocSohCap.soc);
+    bms_stats.addField("SoH", curSocSohCap.soh);
+    bms_stats.addField("Current", curSocSohCap.current);
+    bms_stats.addField("Capacity", curSocSohCap.cap);
+    bms_balStatus.addField("balance1", status.balance_status1);
+    bms_balStatus.addField("balance2", status.balance_status2);
+    bms_balStatus.addField("balance3", status.balance_status3);
+    bms_balStatus.addField("balance4", status.balance_status4);
 
-        // Print what are we exactly writing
-        // Serial.print("Writing: ");
-        // Serial.println(client.pointToLineProtocol(bms_voltage));
-        // If no Wifi signal, try to reconnect it
-        if (wifiMulti.run() != WL_CONNECTED) {
-            Serial.println("Wifi connection lost");
-        }
+    // Print what are we exactly writing
+    // Serial.print("Writing: ");
+    // Serial.println(client.pointToLineProtocol(bms_voltage));
+    // If no Wifi signal, try to reconnect it
+    if (wifiMulti.run() != WL_CONNECTED) {
+        Serial.println("Wifi connection lost");
+    }
 
-        // Write point 1
-        if (!client.writePoint(bms_voltage)) {
-            Serial.print("InfluxDB write failed: ");
-            Serial.println(client.getLastErrorMessage());
-        }
-        // Write point 2
-        if (!client.writePoint(bms_temps)) {
-            Serial.print("InfluxDB write failed: ");
-            Serial.println(client.getLastErrorMessage());
-        }
-        // Write point 3
-        if (!client.writePoint(bms_stats)) {
-            Serial.print("InfluxDB write failed: ");
-            Serial.println(client.getLastErrorMessage());
-        }
-        // Write point 4
-        if (!client.writePoint(bms_balStatus)) {
-            Serial.print("InfluxDB write failed: ");
-            Serial.println(client.getLastErrorMessage());
-        }
-
-        // Reset new Msg Flag 
-        //newMsgFlag = false;
+    // Write point 1
+    if (!client.writePoint(bms_voltage)) {
+        Serial.print("InfluxDB write failed: ");
+        Serial.println(client.getLastErrorMessage());
+    }
+    // Write point 2
+    if (!client.writePoint(bms_temps)) {
+        Serial.print("InfluxDB write failed: ");
+        Serial.println(client.getLastErrorMessage());
+    }
+    // Write point 3
+    if (!client.writePoint(bms_stats)) {
+        Serial.print("InfluxDB write failed: ");
+        Serial.println(client.getLastErrorMessage());
+    }
+    // Write point 4
+    if (!client.writePoint(bms_balStatus)) {
+        Serial.print("InfluxDB write failed: ");
+        Serial.println(client.getLastErrorMessage());
     }
 
 }
