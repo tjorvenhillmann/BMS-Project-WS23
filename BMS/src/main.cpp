@@ -28,7 +28,7 @@ float current_calibration_factor = 0.667;
 
 // status indications 
 bool current_fault = false; 
-int temp_fault = 0; // 1: high temp; -1: low temp
+int temp_fault[4] = {0, 0, 0, 0}; // 1: high temp; -1: low temp
 int voltage_fault[4] = {0, 0, 0, 0}; // 1: high voltage; -1: low voltage 
 int voltage_status[4] = {0, 0, 0, 0}; // voltage within balancing threshold to cut-off
                                       // 1: high voltage; -1: low voltage 
@@ -61,7 +61,7 @@ const float cutoff_voltage_upper_limit = 4.2; // [V]
 const float nom_voltage = 3.6; // [V]
 const float nom_capacity = 1500.0; // [mAh]
 const float stopChargingCurrent = 0.1; // [A]
-const float charging_cutoff_current = 2; // current maximum [A] (0.75)
+const float charging_cutoff_current = 3; // current maximum [A] (0.75)
 const float discharging_cutoff_current = -10.0; // negative current maximum [A] 
 const long charge_time = 150.0*60.0*1000.0; // maximum charging time [ms]
 
@@ -246,9 +246,9 @@ void checkVoltage(){
 
   for(i=0; i<j; i++){ 
     // Status Check
-    if(cell_V[i] >= cutoff_voltage_upper_limit-balThreshold){ // on upper limit 
+    if(cell_V[i] >= cutoff_voltage_upper_limit-stopBalThreshold){ // on upper limit 
       voltage_status[i] = 1; 
-    }else if(cell_V[i] <= cutoff_voltage_lower_limit+balThreshold){ // on lower limit 
+    }else if(cell_V[i] <= cutoff_voltage_lower_limit+stopBalThreshold){ // on lower limit 
       voltage_status[i] = -1; 
     }else{
       voltage_status[i] = 0; 
@@ -285,14 +285,24 @@ void checkTemp(){
   float temp_C[] = {temp_1, temp_2, temp_3, temp_4}; 
   for(i=0; i < (sizeof(temp_C)/sizeof(temp_C[0])); i++){ 
     if(temp_C[i] >= cutoff_temp_upper_limit){  //high temperature
-      temp_fault = 1; 
+      temp_fault[i] = 1; 
+      Serial.print("Temperature Fault HIGH!");
+      Serial.print(i);
+      Serial.print("\n");
     }else if(temp_C[i] <= cutoff_temp_lower_limit){ //low temperature
-      temp_fault = -1; 
+      temp_fault[i] = -1; 
+      Serial.print("Temperature Fault LOW!");
+      Serial.print(i);
+      Serial.print("\n");
     }else{
-      temp_fault = 0; 
+      temp_fault[i] = 0; 
+      Serial.print("NO Temperature Fault!");
+      Serial.print(i);
+      Serial.print("\n");
     }
   } 
 
+  // Set values for CAN 
   temp_list[0] = temp_C[0];
   temp_list[1] = temp_C[1]; 
   temp_list[2] = temp_C[2];   
@@ -306,8 +316,8 @@ void controlBalancing(){
   bool balance_status[4] = {balance_status_1, balance_status_2, balance_status_3, balance_status_4};
   float maxVol = cell_V[0]; // [V]
   float minVol = cell_V[0]; // [V]
-  int maxVol_index = 1; 
-  int minVol_index = 1; 
+  int maxVol_index = 0; 
+  int minVol_index = 0; 
   float volDiff = 0; 
 
   // find maximum voltage 
@@ -331,7 +341,6 @@ void controlBalancing(){
   // Balancing control based on cell voltage difference
   // calculate difference
   volDiff = maxVol - minVol; 
-  // Serial.println(volDiff);
   // enable balancing of cell with highest voltage if necessary
   if(volDiff > balThreshold){
     balance_status[maxVol_index] = true;
@@ -356,12 +365,12 @@ void controlBalancing(){
 
   // Balancing control based on cell voltages 
   for(i=0; i<j; i++){
-    if(voltage_status[i] == 1){ // voltage on upper limit -> enable 
+    if((voltage_status[i] == 1) && charging){ // voltage on upper limit -> enable 
       balance_status[i] = true; 
       Serial.println("3 entry!!!");
     }
   
-    if(voltage_status[i] == -1){ // voltage on lower limit -> disable
+    if((voltage_status[i] == -1) && (!charging)){ // voltage on lower limit -> disable
       balance_status[i] = false; 
       Serial.println("4 entry!!!");
     }
@@ -603,8 +612,8 @@ void loop() {
   }
 
   // error report
-  if(current_fault || voltage_fault[0] != 0 || voltage_fault[1] != 0
-                    || voltage_fault[2] != 0 || voltage_fault[3] != 0 || temp_fault != 0){
+  if(current_fault || voltage_fault[0] != 0 || voltage_fault[1] != 0 || voltage_fault[2] != 0 || voltage_fault[3] != 0 
+                                || temp_fault[0] != 0 || temp_fault[1] != 0 || temp_fault[2] != 0 || temp_fault[3] != 0){
     error = true;
     battery_switch = false;
     digitalWrite(BATTERY_SWITCH_PIN, LOW); 
