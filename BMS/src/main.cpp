@@ -8,28 +8,27 @@ bool startingup = true;
 bool error = false; 
 unsigned long prev_time = 0; 
 float prev_voltage = 0; 
-float soc; // values from 0 to 100
+float soc;                             // values from 0 to 100
 float soh; 
 float rul; 
-const float balThreshold = 0.07; // threshold for balancing [V]
-const float stopBalThreshold = 0.03; // threshold for stopping [V]
-bool charging = false; // indicates charging status: charging = true, discharging = false
+const float balThreshold = 0.07;      // threshold for balancing [V]
+const float stopBalThreshold = 0.03;  // threshold for stopping [V]
+bool charging = false;                // indicates charging status: charging = true, discharging = false
 bool old_status = false; 
 unsigned long charging_timer_offset = 0; 
 
-// parameters for loop delay
+// parameters for loop delay i.e. measurement interval 
 unsigned long lastMeasurement = 0; 
 const unsigned long measurementInterval = 2e3; // measure every 2 seconds [ms]
 
 // calibration data 
 float v_ref = 5.0; // reference voltage in V
 float current_calibration_factor = 0.667; 
-// double temp_sens_offset = 12; // offset for temp_sensor [C]
 
 // status indications 
 bool current_fault = false; 
-int temp_fault[4] = {0, 0, 0, 0}; // 1: high temp; -1: low temp
-int voltage_fault[4] = {0, 0, 0, 0}; // 1: high voltage; -1: low voltage 
+int temp_fault[4] = {0, 0, 0, 0};     // 1: high temp;    -1: low temp
+int voltage_fault[4] = {0, 0, 0, 0};  // 1: high voltage; -1: low voltage 
 int voltage_status[4] = {0, 0, 0, 0}; // voltage within balancing threshold to cut-off
                                       // 1: high voltage; -1: low voltage 
 
@@ -52,18 +51,18 @@ bool balance_status_4 = false;
 bool battery_switch = false;
 
 // safety limits (read-only)
-const float cutoff_temp_upper_limit_charging = 45.0; // [°C]
-const float cutoff_temp_lower_limit_charging = 0; // [°C]
-const float cutoff_temp_upper_limit_discharging = 60.0; // [°C]
+const float cutoff_temp_upper_limit_charging = 45.0;     // [°C]
+const float cutoff_temp_lower_limit_charging = 0;        // [°C]
+const float cutoff_temp_upper_limit_discharging = 60.0;  // [°C]
 const float cutoff_temp_lower_limit_discharging = -20.0; // [°C]
 const float cutoff_voltage_lower_limit = 2.5; // [V]
 const float cutoff_voltage_upper_limit = 4.2; // [V]
-const float nom_voltage = 3.6; // [V]
-const float nom_capacity = 1500.0; // [mAh]
-const float stopChargingCurrent = 0.1; // [A]
-const float charging_cutoff_current = 3; // current maximum [A] (0.75)
+const float nom_voltage = 3.6;                // [V]
+const float nom_capacity = 1500.0;              // [mAh]
+const float stopChargingCurrent = 0.1;          // [A]
+const float charging_cutoff_current = 3;        // current maximum [A] (0.75)
 const float discharging_cutoff_current = -10.0; // negative current maximum [A] 
-const long charge_time = 150.0*60.0*1000.0; // maximum charging time [ms]
+const long charge_time = 150.0*60.0*1000.0;     // maximum charging time [ms]
 
 // global variables for limits
 float cutoff_temp_upper_limit = cutoff_temp_upper_limit_discharging; 
@@ -122,7 +121,6 @@ byte tmsg[2] = {0x00,0x00};
 
 // ********************* functions ******************************
 float adc2temp(int16_t adc);
-// double readThermisterSE017();
 void checkCurrent_withACS712();
 void checkVoltage();
 void checkTemp();
@@ -131,7 +129,6 @@ void calculateStartSOC();
 void battery_state();
 void adjust_temp_limits();
 void connectBattery();
-
 // **************************************************************
 
 
@@ -188,14 +185,6 @@ float adc2temp(int16_t adc){
   float x0 = 97.45;
   return x4 + x3 + x2 + x1 + x0;
 }
-
-// float readThermisterSE017(int RawADC){
-//  float lnR, Temp; 
-//  lnR = log(((10240000/RawADC) - 10000)); 
-//  Temp = 1/(0.001129148 + (0.000234125 + (0.0000000876741 * lnR * lnR )) * lnR);
-//  Temp = -1*(Temp - 273.15 - temp_sens_offset); 
-//  return Temp; 
-// }
 
 void checkCurrent_withACS712(){
   // read sensor
