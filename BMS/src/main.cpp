@@ -410,15 +410,6 @@ void controlBalancing(){
   Serial.print("\t");
   Serial.print(balance_status_4);
   Serial.print("\n");
-  Serial.print("Balance Control array: ");
-  Serial.print(balance_status[0]);
-  Serial.print("\t");
-  Serial.print(balance_status[1]);
-  Serial.print("\t");
-  Serial.print(balance_status[2]);
-  Serial.print("\t");
-  Serial.print(balance_status[3]);
-  Serial.print("\n");
   Serial.print("Balancing Triggers: ");
   Serial.print("minVol: ");
   Serial.print(minVol);
@@ -490,13 +481,10 @@ void connectBattery(){ // to ensure, that only connects when safe
     battery_switch = true; 
     digitalWrite(BATTERY_SWITCH_PIN, HIGH); 
   }
-  Serial.print("Battery Switch");
-  Serial.print(battery_switch); 
-  Serial.print("\n");
 }
 
 
-// CAN FUNCTIONS
+/*********************************** CAN FUNCTIONS **************************************************/
 void float2byte(float x, byte *var, int resolution){
   *var = (int)(x*resolution) & 0xff;
   *(var+1) = (int)(x*resolution) >> 8 & 0xff;
@@ -558,14 +546,11 @@ void sendCANmessages(){
   // delay(100);
 }
 
-
-
-
-
+/************************************** main function ********************************************/
 void loop() {
 
   while((millis()-lastMeasurement) < measurementInterval){
-    // delay - do nothing 
+    // delay/measurement interval - do nothing 
   }
   lastMeasurement = millis();
 
