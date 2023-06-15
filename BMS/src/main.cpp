@@ -12,14 +12,14 @@ float soc;                             // values from 0 to 100
 float soh; 
 float rul; 
 const float balThreshold = 0.07;      // threshold for balancing [V]
-const float stopBalThreshold = 0.03;  // threshold for stopping [V]
+const float stopBalThreshold = 0.04;  // threshold for stopping [V]
 bool charging = false;                // indicates charging status: charging = true, discharging = false
 bool old_status = false; 
 unsigned long charging_timer_offset = 0; 
 
 // parameters for loop delay i.e. measurement interval 
 unsigned long lastMeasurement = 0; 
-const unsigned long measurementInterval = 2e3; // measure every 2 seconds [ms]
+const unsigned long measurementInterval = 50; // measure every 50 miliseconds [ms]
 
 // calibration data 
 float v_ref = 5.0; // reference voltage in V
@@ -53,12 +53,12 @@ bool battery_switch = false;
 // safety limits (read-only)
 const float cutoff_temp_upper_limit_charging = 45.0;     // [°C]
 const float cutoff_temp_lower_limit_charging = 0;        // [°C]
-const float cutoff_temp_upper_limit_discharging = 60.0;  // [°C]
+const float cutoff_temp_upper_limit_discharging = 40.0;  // [°C]
 const float cutoff_temp_lower_limit_discharging = -20.0; // [°C]
 const float cutoff_voltage_lower_limit = 2.5; // [V]
 const float cutoff_voltage_upper_limit = 4.2; // [V]
 const float nom_voltage = 3.6;                // [V]
-const float nom_capacity = 1500.0;              // [mAh]
+const float nom_capacity = 2600.0;              // [mAh]
 const float stopChargingCurrent = 0.1;          // [A]
 const float charging_cutoff_current = 3;        // current maximum [A] (0.75)
 const float discharging_cutoff_current = -10.0; // negative current maximum [A] 
@@ -275,19 +275,10 @@ void checkTemp(){
   for(i=0; i < (sizeof(temp_C)/sizeof(temp_C[0])); i++){ 
     if(temp_C[i] >= cutoff_temp_upper_limit){  //high temperature
       temp_fault[i] = 1; 
-      Serial.print("Temperature Fault HIGH!");
-      Serial.print(i);
-      Serial.print("\n");
     }else if(temp_C[i] <= cutoff_temp_lower_limit){ //low temperature
       temp_fault[i] = -1; 
-      Serial.print("Temperature Fault LOW!");
-      Serial.print(i);
-      Serial.print("\n");
     }else{
       temp_fault[i] = 0; 
-      Serial.print("NO Temperature Fault!");
-      Serial.print(i);
-      Serial.print("\n");
     }
   } 
 
@@ -314,8 +305,6 @@ void controlBalancing(){
     if(cell_V[i] > maxVol){
       maxVol = cell_V[i];
       maxVol_index = i; 
-      Serial.println("maxVol_index einlesen");
-      Serial.println(maxVol_index);
     }
   }
   // find minimum voltage
@@ -333,35 +322,27 @@ void controlBalancing(){
   // enable balancing of cell with highest voltage if necessary
   if(volDiff > balThreshold){
     balance_status[maxVol_index] = true;
-    Serial.print("balance status max Vol: "); 
-    Serial.print(balance_status[maxVol_index]);
-    Serial.print("\n"); 
-    Serial.println("0 entry!!!");
   }
 
   // disable balancing of cell with lowest voltage 
   if(balance_status[minVol_index] == true){
     balance_status[minVol_index] = false; 
-    Serial.println("1 entry!!!");
   }
   // disable balancing of all cells, if balanced
   if(volDiff < stopBalThreshold){
     for(i=0; i<j; i++){
       balance_status[i] = false;
-      Serial.println("2 entry!!!");
     }
   }
 
   // Balancing control based on cell voltages 
   for(i=0; i<j; i++){
     if((voltage_status[i] == 1) && charging){ // voltage on upper limit -> enable 
-      balance_status[i] = true; 
-      Serial.println("3 entry!!!");
+      balance_status[i] = true;
     }
   
     if((voltage_status[i] == -1) && (!charging)){ // voltage on lower limit -> disable
       balance_status[i] = false; 
-      Serial.println("4 entry!!!");
     }
   }
 
@@ -400,30 +381,6 @@ void controlBalancing(){
   balance_error_list[1] = balance_status[1];
   balance_error_list[2] = balance_status[2];
   balance_error_list[3] = balance_status[3];
-
-  Serial.print("Balance Control: ");
-  Serial.print(balance_status_1);
-  Serial.print("\t");
-  Serial.print(balance_status_2);
-  Serial.print("\t");
-  Serial.print(balance_status_3);
-  Serial.print("\t");
-  Serial.print(balance_status_4);
-  Serial.print("\n");
-  Serial.print("Balancing Triggers: ");
-  Serial.print("minVol: ");
-  Serial.print(minVol);
-  Serial.print("\t");
-  Serial.print("maxVol: ");
-  Serial.print(maxVol);
-  Serial.print("\t");
-  Serial.print("Difference: ");
-  Serial.print(volDiff); 
-  Serial.print("\n");
-  Serial.print(minVol_index);
-  Serial.print("\t");
-  Serial.print(maxVol_index);
-  Serial.print("\n");
 }
 
 void calculateStartSOC(){
@@ -600,13 +557,10 @@ void loop() {
 
   // Connect battery if everything okay
   connectBattery(); 
-  Serial.print("Battery Switch: "); 
-  Serial.print(battery_switch); 
-  Serial.print("\n"); 
 
   startingup = false;
 
- 
+  /*
   // SOC, SOH, Error
   Serial.print("SOC: "); 
   Serial.print(soc); 
@@ -653,7 +607,22 @@ void loop() {
   Serial.print(balance_status_4);
   Serial.print("\n");
   Serial.print("------------------------------------ \n");
-  
+  Serial.print("Balancing Triggers: ");
+  Serial.print("minVol: ");
+  Serial.print(minVol);
+  Serial.print("\t");
+  Serial.print("maxVol: ");
+  Serial.print(maxVol);
+  Serial.print("\t");
+  Serial.print("Difference: ");
+  Serial.print(volDiff); 
+  Serial.print("\n");
+  Serial.print(minVol_index);
+  Serial.print("\t");
+  Serial.print(maxVol_index);
+  Serial.print("\n");
+  */
+
   // Update and Send CAN Messages
   updateCANmessages();  
   sendCANmessages();  
