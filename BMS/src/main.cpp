@@ -582,6 +582,8 @@ void loop() {
       battery_switch = false; 
     }else if(current < stopChargingCurrent){ // charging current 
       battery_switch = false; 
+    }else if(soc >= 100.0){ // SOC, battery full
+      battery_switch = false; 
     }
   }
 
