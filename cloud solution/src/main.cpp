@@ -143,17 +143,17 @@ void setupCAN()
 
 void printCAN_Frames(){
   // Just a bunch of serial prints for debugging purposes
-  if(canMsg.can_id == 1){
-    Serial.println("New Temperature values received:");
-    Serial.print(temps.temp1);
-    Serial.print("    ");
-    Serial.print(temps.temp2);
-    Serial.print("    ");
-    Serial.print(temps.temp3);
-    Serial.print("    ");
-    Serial.println(temps.temp4);
-  }
-  if(canMsg.can_id == 2){
+//   if(canMsg.can_id == 1){
+//     Serial.println("New Temperature values received:");
+//     Serial.print(temps.temp1);
+//     Serial.print("    ");
+//     Serial.print(temps.temp2);
+//     Serial.print("    ");
+//     Serial.print(temps.temp3);
+//     Serial.print("    ");
+//     Serial.println(temps.temp4);
+//   }
+  if(1){
     Serial.println("New Voltage values received:");
     Serial.print(voltages.cell_V1);
     Serial.print("    ");
@@ -163,26 +163,26 @@ void printCAN_Frames(){
     Serial.print("    ");
     Serial.println(voltages.cell_V4);
   }
-  if(canMsg.can_id == 3){
-    Serial.println("New Cur, SOC, SOH and Cap values received:");
-    Serial.print(curSocSohCap.current);
-    Serial.print("    ");
-    Serial.print(curSocSohCap.soc);
-    Serial.print("    ");
-    Serial.print(curSocSohCap.soc);
-    Serial.print("    ");
-    Serial.println(curSocSohCap.cap);
-  }
-  if(canMsg.can_id == 4){
-    Serial.println("New Balance status received:");
-    Serial.print(status.balance_status1);
-    Serial.print("    ");
-    Serial.print(status.balance_status2);
-    Serial.print("    ");
-    Serial.print(status.balance_status3);
-    Serial.print("    ");
-    Serial.println(status.balance_status4);
-  }
+//   if(canMsg.can_id == 3){
+//     Serial.println("New Cur, SOC, SOH and Cap values received:");
+//     Serial.print(curSocSohCap.current);
+//     Serial.print("    ");
+//     Serial.print(curSocSohCap.soc);
+//     Serial.print("    ");
+//     Serial.print(curSocSohCap.soc);
+//     Serial.print("    ");
+//     Serial.println(curSocSohCap.cap);
+//   }
+//   if(canMsg.can_id == 4){
+//     Serial.println("New Balance status received:");
+//     Serial.print(status.balance_status1);
+//     Serial.print("    ");
+//     Serial.print(status.balance_status2);
+//     Serial.print("    ");
+//     Serial.print(status.balance_status3);
+//     Serial.print("    ");
+//     Serial.println(status.balance_status4);
+//   }
 }
 
 void decodeCAN_Message(){
@@ -334,7 +334,7 @@ void setup() {
 void loop() {
     // Section for getting new CAN data 
     readCAN_Message();
-    //printCAN_Frames();
+    printCAN_Frames();
 
     // Store measured value into point
     bms_voltage.clearFields();
@@ -345,7 +345,9 @@ void loop() {
     // set_random_voltages();
     // set_random_temps();
     static float pack_voltage = 0.0;
+    static float power = 0.0;
     pack_voltage = voltages.cell_V1 + voltages.cell_V2 + voltages.cell_V3 + voltages.cell_V4;
+    power = pack_voltage * curSocSohCap.current;
     bms_voltage.addField("cell_V1", voltages.cell_V1);
     bms_voltage.addField("cell_V2", voltages.cell_V2);
     bms_voltage.addField("cell_V3", voltages.cell_V3);
@@ -359,6 +361,7 @@ void loop() {
     bms_stats.addField("SoH", curSocSohCap.soh);
     bms_stats.addField("Current", curSocSohCap.current);
     bms_stats.addField("Capacity", curSocSohCap.cap);
+    bms_stats.addField("Power", power);
     bms_balStatus.addField("balance1", status.balance_status1);
     bms_balStatus.addField("balance2", status.balance_status2);
     bms_balStatus.addField("balance3", status.balance_status3);
