@@ -19,7 +19,7 @@ unsigned long charging_timer_offset = 0;
 
 // parameters for loop delay i.e. measurement interval 
 unsigned long lastMeasurement = 0; 
-const unsigned long measurementInterval = 50; // measure every 50 miliseconds [ms]
+const unsigned long measurementInterval = 10; // measure every 50 miliseconds [ms]
 
 // calibration data 
 float v_ref = 5.0; // reference voltage in V
