@@ -9,6 +9,15 @@ void loop() {
   int16_t adc_value = analogRead(A0);
   Serial.print(adc2temp(adc_value));
   Serial.print("\n");
+  adc_value = analogRead(A1);
+  Serial.print(adc2temp(adc_value));
+  Serial.print("\n");
+  adc_value = analogRead(A2);
+  Serial.print(adc2temp(adc_value));
+  Serial.print("\n");
+  adc_value = analogRead(A3);
+  Serial.print(adc2temp(adc_value));
+  Serial.print("\n");
 
 }
 
